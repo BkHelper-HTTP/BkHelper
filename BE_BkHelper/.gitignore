@@ -1,0 +1,53 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Thư mục môi trường ảo
+venv/
+
+# File biến môi trường chứa secret
+.env
+
+# Thư mục Alembic versions (tuỳ bạn có muốn ignore hay không)
+# Nếu muốn quản lý migration thì không nên ignore thư mục này
+# alembic/versions/
+
+# Thư mục build, dist nếu có
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# SQLite database files (nếu có)
+*.sqlite3
+
+# Cache thư viện pip
+pip-wheel-metadata/
+*.whl
+
+# Thư mục __pypackages__ (nếu dùng pipenv hoặc tương tự)
+__pypackages__/
+
+# Thư mục .pytest_cache (nếu dùng pytest)
+.pytest_cache/
+
+# Các file IDE/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# File Python bytecode được tạo bởi IDE
+*.pyc
+
+# Thư mục coverage reports (nếu dùng coverage)
+htmlcov/
+.coverage
+.coverage.*
+
+# File database SQLite tạm
+*.db
