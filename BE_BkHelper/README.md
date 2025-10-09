@@ -81,6 +81,8 @@ Swagger UI: http://localhost:8000/docs
 
 ReDoc: http://localhost:8000/redoc
 
+Fastapi: http://localhost:8000/docs#/default/root__get
+
 
 ## 🧪 Testing (chưa có)
 ```bash
