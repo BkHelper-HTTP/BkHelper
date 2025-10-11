@@ -115,16 +115,16 @@ const TabLayout = () => {
             />
 
             <Tabs.Screen
-                name="notification"
+                name="map"
                 options={{
-                    title: "Notification"
+                    title: "Map"
                 }}
             />
 
             <Tabs.Screen
-                name="map"
+                name="notification"
                 options={{
-                    title: "Map"
+                    title: "Notification"
                 }}
             />
 
