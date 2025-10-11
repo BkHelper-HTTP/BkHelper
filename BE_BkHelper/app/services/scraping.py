@@ -81,6 +81,39 @@ class HCMUTLMSService:
             'cookies': self.cookies
         }
 
+    def logout(self, sesskey: str):
+        headers = {
+            'User-Agent': 'Mozilla/5.0',
+            'Referer': self.LMS_LOGIN_URL,
+            'Origin': 'https://lms.hcmut.edu.vn'
+        }
+
+        try:
+            # 1️⃣ Gọi Moodle logout
+            moodle_logout_url = f"https://lms.hcmut.edu.vn/login/logout.php?sesskey={sesskey}"
+            res1 = self.session.get(moodle_logout_url, headers=headers, allow_redirects=False)
+
+            if res1.status_code != 302 or 'Location' not in res1.headers:
+                raise Exception("Không nhận được redirect từ Moodle logout.")
+
+            # 2️⃣ Theo redirect đến CAS logout (chỉ 1 lần)
+            cas_logout_url = res1.headers['Location']
+            res2 = self.session.get(cas_logout_url, headers=headers, allow_redirects=False)
+
+            # 3️⃣ Nếu CAS redirect ngược lại về LMS, follow thêm 1 lần
+            if 'Location' in res2.headers:
+                final_url = res2.headers['Location']
+                self.session.get(final_url, headers=headers, allow_redirects=False)
+            else:
+                final_url = cas_logout_url
+
+            self.session.cookies.clear()
+
+            return {'ok': True, 'msg': 'Logout thành công', 'final_url': final_url}
+
+        except Exception as e:
+            return {'ok': False, 'msg': f'Lỗi khi logout: {e}'}
+
     def get_notifications(self, sesskey: str, userid: int):
         """
         Gọi core_message_get_conversations để lấy danh sách thông báo từ LMS
