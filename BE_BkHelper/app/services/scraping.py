@@ -118,3 +118,40 @@ class HCMUTLMSService:
             raise Exception("Error getting notifications: " + result[0]["exception"]["message"])
 
         return result[0]["data"]
+    
+    def get_notification_messages(self, sesskey: str, userid: int, convid: int, limitnum: int = 101, limitfrom: int = 1, newest: bool = True):
+        """
+        Gọi core_message_get_conversation_messages để lấy danh sách tin nhắn trong 1 cuộc hội thoại (conversation)
+        """
+        url = f"{self.NOTIFY_API}?sesskey={sesskey}&info=core_message_get_conversation_messages"
+        payload = [
+            {
+                "index": 0,
+                "methodname": "core_message_get_conversation_messages",
+                "args": {
+                    "currentuserid": userid,
+                    "convid": convid,
+                    "newest": newest,
+                    "limitnum": limitnum,
+                    "limitfrom": limitfrom
+                }
+            }
+        ]
+
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0",
+            "Cookie": f"MoodleSession={self.cookies.get('MoodleSession')}; MOODLEID1_={self.cookies.get('MOODLEID1_')}"
+        }
+
+        response = self.session.post(url, headers=headers, data=json.dumps(payload))
+        result = response.json()
+
+        # Kiểm tra phản hồi hợp lệ
+        if not isinstance(result, list):
+            raise Exception("Invalid response from LMS: " + json.dumps(result))
+
+        if "exception" in result[0]:
+            raise Exception("Error getting messages: " + result[0]["exception"]["message"])
+
+        return result[0]["data"]
