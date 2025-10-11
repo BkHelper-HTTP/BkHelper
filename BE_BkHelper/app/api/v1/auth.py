@@ -14,6 +14,6 @@ def lms_login(data: LoginSchema):
     try:
         service = HCMUTLMSService(data.username, data.password)
         login_data = service.login()
-        return {"status": "success", "sesskey": login_data['sesskey'], "cookies": login_data['cookies']}
+        return {"status": "success", "sesskey": login_data['sesskey'], "cookies": login_data['cookies'], "userid": login_data['userid']}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
