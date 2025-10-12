@@ -10,19 +10,11 @@ const source = {
 const MapTab = () => {
     const { width } = useWindowDimensions();
     return (
-        // <SafeAreaView style={{ flex: 1 }}>
-        //     <View>
-        //         <Text>
-        //             Map Tab
-        //         </Text>
-        //     </View>
-        // </SafeAreaView>
         <SafeAreaView style={{ flex: 1 }}>
-            <View style={{ marginHorizontal: 20 }}>
-                <RenderHtml
-                    contentWidth={width}
-                    source={source}
-                />
+            <View>
+                <Text>
+                    Map Tab
+                </Text>
             </View>
         </SafeAreaView>
     )
