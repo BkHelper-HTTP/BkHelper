@@ -156,4 +156,9 @@ declare global {
         title: string;
         data: IScheduleItem[];
     }
+
+    interface IScheduleAPI {
+        status: string
+        data: IScheduleSection[]
+    }
 }

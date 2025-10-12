@@ -35,7 +35,7 @@ export const fetchNotificationsMessageAPI = (sesskey: string, MoodleSession: str
 
 export const fetchScheduleAPI = (username: string, password: string, semester_year: string) => {
     const url = `/api/v1/schedule/fetch-schedule`;
-    return instance.post<IBackendRes<IScheduleSection>>(url, {
+    return instance.post<IScheduleAPI>(url, {
         username: username,
         password: password,
         semester_year: semester_year

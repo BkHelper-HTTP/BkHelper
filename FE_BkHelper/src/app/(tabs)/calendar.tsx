@@ -2,7 +2,7 @@ import AgendaItem from '@/components/mocks/AgendaItem';
 import { getTheme, lightThemeColor, themeColor } from '@/components/mocks/theme';
 import { APP_COLOR } from '@/utils/constant';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { AgendaList, CalendarProvider, ExpandableCalendar, WeekCalendar } from 'react-native-calendars';
 import { SafeAreaView } from "react-native-safe-area-context";
 import rightArrowIcon from '@/assets/images/next.png';
@@ -14,9 +14,6 @@ import Toast from 'react-native-root-toast';
 interface Props {
     weekView?: boolean;
 }
-
-// === Interface ISchedule mới ===
-
 
 const CalendarTab = ({ weekView }: Props) => {
     const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +48,7 @@ const CalendarTab = ({ weekView }: Props) => {
             try {
                 setIsLoading(true);
                 const res = await fetchScheduleAPI("thinh.nguyenhoquoc", "@Thinh7020", "20251");
+                console.log("SCHEDULE RESPONSE:", res);
                 if (res?.data && Array.isArray(res.data)) {
                     setSchedule(res.data);
                 } else {
@@ -58,7 +56,6 @@ const CalendarTab = ({ weekView }: Props) => {
                         duration: Toast.durations.LONG,
                         textColor: "white",
                         backgroundColor: "red",
-                        opacity: 1,
                         position: Toast.positions.BOTTOM,
                     });
                 }
@@ -67,7 +64,6 @@ const CalendarTab = ({ weekView }: Props) => {
                     duration: Toast.durations.LONG,
                     textColor: "white",
                     backgroundColor: "red",
-                    opacity: 1,
                     position: Toast.positions.BOTTOM,
                 });
             } finally {
@@ -79,43 +75,39 @@ const CalendarTab = ({ weekView }: Props) => {
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
-            <CalendarProvider
-                date={schedule?.[0]?.title || new Date().toISOString().split('T')[0]}
-                showTodayButton
-                theme={todayBtnTheme.current}
-            >
-                {weekView ? (
-                    <WeekCalendar
-                        firstDay={1}
-                        markedDates={markedDates}
-                    />
-                ) : (
-                    <ExpandableCalendar
-                        theme={theme.current}
-                        firstDay={1}
-                        markedDates={markedDates}
-                        leftArrowImageSource={leftArrowIcon}
-                        rightArrowImageSource={rightArrowIcon}
-                    />
-                )}
+            {!isLoading && schedule.length > 0 ? (
+                <CalendarProvider
+                    date={schedule[0].title}
+                    showTodayButton
+                    theme={todayBtnTheme.current}
+                >
+                    {weekView ? (
+                        <WeekCalendar
+                            firstDay={1}
+                            markedDates={markedDates}
+                        />
+                    ) : (
+                        <ExpandableCalendar
+                            theme={theme.current}
+                            firstDay={1}
+                            markedDates={markedDates}
+                            leftArrowImageSource={leftArrowIcon}
+                            rightArrowImageSource={rightArrowIcon}
+                        />
+                    )}
 
-                <AgendaList
-                    sections={schedule}
-                    renderItem={renderItem}
-                    sectionStyle={styles.section}
-                    initialNumToRender={5}
-                    removeClippedSubviews
-                    infiniteListProps={
-                        {
-                            itemHeight: 160,
-                            titleHeight: 50,
-                            itemHeightByType: {
-                                LongEvent: 120
-                            }
-                        }
-                    }
-                />
-            </CalendarProvider>
+                    <AgendaList
+                        sections={schedule}
+                        renderItem={renderItem}
+                        sectionStyle={styles.section}
+                        keyExtractor={(item, index) => `${item.id}-${index}`}
+                    />
+                </CalendarProvider>
+            ) : (
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <Text>Đang tải lịch...</Text>
+                </View>
+            )}
         </SafeAreaView>
     );
 };
