@@ -6,7 +6,8 @@ import { Redirect } from "expo-router"
 const RootPage = () => {
     if (true) {
         return (
-            <Redirect href={"/(tabs)"} />
+            // <Redirect href={"/(tabs)"} />
+            <Redirect href={"/(auth)/signin"} />
         )
     }
 }
