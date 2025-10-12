@@ -105,6 +105,15 @@ const CalendarTab = ({ weekView }: Props) => {
                     sectionStyle={styles.section}
                     initialNumToRender={5}
                     removeClippedSubviews
+                    infiniteListProps={
+                        {
+                            itemHeight: 160,
+                            titleHeight: 50,
+                            itemHeightByType: {
+                                LongEvent: 120
+                            }
+                        }
+                    }
                 />
             </CalendarProvider>
         </SafeAreaView>
