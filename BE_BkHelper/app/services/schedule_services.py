@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import re
+from datetime import datetime
+from typing import Optional
 
 class HCMUTMyBKService:
     CAS_LOGIN_URL = "https://sso.hcmut.edu.vn/cas/login"
@@ -93,9 +95,7 @@ class HCMUTMyBKService:
             raise Exception(f"Failed to get student info ({res.status_code})")
         return res.json()
 
-    from datetime import datetime
-
-    def get_current_semester_year():
+    def get_current_semester_year(self) -> str:
         today = datetime.today()
         year = today.year
         month = today.month
@@ -114,9 +114,9 @@ class HCMUTMyBKService:
 
         return year_str + str(semester)
 
-    def get_schedule(self, token: str, student_id: int, semester_year: str = "20251"):
+    def get_schedule(self, token: str, student_id: int, semester_year: Optional[str] = None):
         if semester_year is None:
-            semester_year = get_current_semester_year()
+            semester_year = self.get_current_semester_year()
         url = f"{self.SCHEDULE_API}?studentId={student_id}&semesterYear={semester_year}&null"
         headers = {"Authorization": token, "User-Agent": "Mozilla/5.0"}
         res = self.session.get(url, headers=headers)
@@ -127,7 +127,9 @@ class HCMUTMyBKService:
     # ------------------------
     # Gọi gộp (login + info + schedule)
     # ------------------------
-    def get_full_schedule(self, semester_year: str = "20251"):
+    def get_full_schedule(self, semester_year: Optional[str] = None):
+        if semester_year is None or semester_year.lower() == "null":
+            semester_year = self.get_current_semester_year()
         login_data = self.login()
         token = login_data["token"]
         info = self.get_student_info(token)
