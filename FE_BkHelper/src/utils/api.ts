@@ -32,3 +32,12 @@ export const fetchNotificationsMessageAPI = (sesskey: string, MoodleSession: str
         convid: convid
     });
 };
+
+export const fetchScheduleAPI = (username: string, password: string, semester_year: string) => {
+    const url = `/api/v1/schedule/fetch-schedule`;
+    return instance.post<IBackendRes<IScheduleSection>>(url, {
+        username: username,
+        password: password,
+        semester_year: semester_year
+    });
+};
