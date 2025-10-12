@@ -133,7 +133,6 @@ class HCMUTMyBKService:
         login_data = self.login()
         token = login_data["token"]
         info = self.get_student_info(token)
-        print(info)
         student_id = info["data"]["id"]
         schedule = self.get_schedule(token, student_id, semester_year)
-        return schedule
+        return schedule["data"]
