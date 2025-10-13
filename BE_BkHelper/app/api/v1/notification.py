@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from app.services.scraping import HCMUTLMSService
+from app.services.notification_services import HCMUTLMSService
 
 router = APIRouter()
 
