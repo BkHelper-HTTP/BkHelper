@@ -3,13 +3,15 @@ import SocialButton from "@/components/button/social.button"
 import ShareInput from "@/components/input/share.input"
 import { APP_COLOR } from "@/utils/constant"
 import { LoginSchema } from "@/utils/validate.schema"
-import { Link, router } from "expo-router"; import { Formik } from 'formik'
+import { Link, router } from "expo-router";
+import { Formik } from 'formik'
 import { useState } from "react"
 import { ImageBackground, Platform, StyleSheet, Text, View } from "react-native"
-// import { useCurrentApp } from "@/context/app.context"
 import login from "@/assets/auth/loginBackground.jpg"
 import { lmsLoginAPI } from "@/utils/api"
 import Toast from "react-native-root-toast";
+import { useCurrentApp } from "@/context/app.context"
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const styles = StyleSheet.create({
     container: { flex: 0.8, marginHorizontal: 20, gap: 10 },
@@ -22,33 +24,24 @@ const backend =
 
 const SignInPage = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const { setAppState } = useCurrentApp()
 
     const handleLogin = async (username: string, password: string) => {
-        console.log("check backend: ", backend)
         try {
             setIsLoading(true);
             const res = await lmsLoginAPI(username, password);
-            console.log("check res: ", res)
-            console.log("check backend: ", backend)
-            if (res.data) {
-                // setAppState(res.data);
-                // await AsyncStorage.setItem("access_token", res.data.access_token)
+            if (res.status === "success") {
+                setAppState(res);
+                await AsyncStorage.setItem("sesskey", res.sesskey)
                 router.replace({ pathname: "/(tabs)" });
             } else {
-                // const m = Array.isArray(res.message) ? res.message[0] : res.message;
-                // Toast.show(m, {
-                //     duration: Toast.durations.LONG,
-                //     textColor: "white",
-                //     backgroundColor: APP_COLOR.BLUE,
-                //     opacity: 1,
-                // });
-
-                // if (res.statusCode === 400) {
-                //     router.replace({
-                //         pathname: "/(auth)/verify",
-                //         params: { email: email, isLogin: 1 },
-                //     });
-                // }
+                Toast.show("Sign in not successfully", {
+                    duration: Toast.durations.LONG,
+                    textColor: "white",
+                    backgroundColor: "red",
+                    opacity: 1,
+                    position: Toast.positions.BOTTOM
+                });
             }
         } catch (err) {
             console.log(err);
