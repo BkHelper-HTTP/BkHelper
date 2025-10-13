@@ -43,15 +43,15 @@ class LogoutSchema(BaseModel):
 #     except Exception as e:
 #         raise HTTPException(status_code=400, detail=str(e))
     
-@router.post("/lms-logout")
-def lms_logout(data: LogoutSchema):
-    try:
-        service = HCMUTLMSService(username="", password="")
-        service.session.cookies.update(data.cookies)
-        result = service.logout(data.sesskey)
-        return {"status": "success", "detail": result}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# @router.post("/lms-logout")
+# def lms_logout(data: LogoutSchema):
+#     try:
+#         service = HCMUTLMSService(username="", password="")
+#         service.session.cookies.update(data.cookies)
+#         result = service.logout(data.sesskey)
+#         return {"status": "success", "detail": result}
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=str(e))
     
 
 @router.post("/hcmut-login")
