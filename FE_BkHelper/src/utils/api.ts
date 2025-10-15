@@ -1,7 +1,7 @@
 import instance from "@/utils/axios.customize";
 
 export const lmsLoginAPI = (username: string, password: string) => {
-    const url = `/api/v1/auth/lms-login`;
+    const url = `/api/v1/auth/hcmut-login`;
     return instance.post<IUserLogin>(url, {
         username: username,
         password: password,
@@ -33,11 +33,13 @@ export const fetchNotificationsMessageAPI = (sesskey: string, MoodleSession: str
     });
 };
 
-export const fetchScheduleAPI = (username: string, password: string, semester_year: string) => {
+export const fetchScheduleAPI = (token: string, SESSION: string, semester_year: string) => {
     const url = `/api/v1/schedule/fetch-schedule`;
     return instance.post<IScheduleAPI>(url, {
-        username: username,
-        password: password,
+        token: token,
+        cookies: {
+            SESSION: SESSION
+        },
         semester_year: semester_year
     });
 };

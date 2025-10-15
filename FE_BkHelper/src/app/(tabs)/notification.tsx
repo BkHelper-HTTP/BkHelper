@@ -13,8 +13,8 @@ const NotificationTab = () => {
     useEffect(() => {
         const fetchNotifications = async () => {
             setIsLoading(true)
-            if (appState?.sesskey && appState?.cookies.MoodleSession && appState?.cookies.MOODLEID1_ && appState?.userid) {
-                const res = await fetchNotificationsAPI(appState?.sesskey!, appState?.cookies.MoodleSession!, appState?.cookies.MOODLEID1_, appState?.userid)
+            if (appState?.lms.sesskey && appState?.lms.cookies.MoodleSession && appState?.lms.cookies.MOODLEID1_ && appState?.lms.userid) {
+                const res = await fetchNotificationsAPI(appState?.lms.sesskey!, appState?.lms.cookies.MoodleSession!, appState?.lms.cookies.MOODLEID1_, appState?.lms.userid)
                 if (res.data?.conversations) {
                     setConversations(res.data.conversations)
                 } else {

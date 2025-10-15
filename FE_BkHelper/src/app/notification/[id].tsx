@@ -71,8 +71,8 @@ export default function NotificationDetailScreen() {
     useEffect(() => {
         const fetchNotifications = async () => {
             setIsLoading(true)
-            if (appState?.sesskey && appState?.cookies.MoodleSession && appState?.cookies.MOODLEID1_ && appState?.userid) {
-                const res = await fetchNotificationsMessageAPI(appState?.sesskey!, appState?.cookies.MoodleSession!, appState?.cookies.MOODLEID1_, appState?.userid, +id)
+            if (appState?.lms.sesskey && appState?.lms.cookies.MoodleSession && appState?.lms.cookies.MOODLEID1_ && appState?.lms.userid) {
+                const res = await fetchNotificationsMessageAPI(appState?.lms.sesskey!, appState?.lms.cookies.MoodleSession!, appState?.lms.cookies.MOODLEID1_, appState?.lms.userid, +id)
                 if (res.data) {
                     setMessageData(res.data)
                     const combinedMessages = [

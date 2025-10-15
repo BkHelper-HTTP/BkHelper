@@ -32,7 +32,7 @@ const SignInPage = () => {
             const res = await lmsLoginAPI(username, password);
             if (res.status === "success") {
                 setAppState(res);
-                await AsyncStorage.setItem("sesskey", res.sesskey)
+                await AsyncStorage.setItem("sesskey", res.lms.sesskey)
                 router.replace({ pathname: "/(tabs)" });
             } else {
                 Toast.show("Sign in not successfully", {

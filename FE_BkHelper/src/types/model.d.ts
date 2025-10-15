@@ -10,14 +10,25 @@ declare global {
 
     interface IUserLogin {
         status: string,
-        sesskey: string,
-        cookies: {
-            JSESSIONID: string,
-            CASTGC: string,
-            MoodleSession: string,
-            MOODLEID1_: string
+        mybk: {
+            token: string,
+            cookies: {
+                JSESSIONID: string,
+                CASTGC: string,
+                SESSION: string
+            }
         },
-        userid: number
+        lms: {
+            sesskey: string,
+            cookies: {
+                JSESSIONID: string,
+                CASTGC: string,
+                SESSION: string,
+                MoodleSession: string,
+                MOODLEID1_: string
+            },
+            userid: number
+        }
     }
 
     interface INotificationAPI {

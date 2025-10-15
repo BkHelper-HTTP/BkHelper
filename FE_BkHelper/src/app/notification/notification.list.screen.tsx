@@ -141,14 +141,14 @@ export default function NotificationListScreen(props: IProps) {
                                     <View style={{ flexDirection: "row", gap: 10 }}>
                                         <Text style={[
                                             styles.name,
-                                            !item.isread && styles.unreadText, // in đậm nếu chưa đọc
+                                            !item.isread && styles.unreadText,
                                         ]}>{member.fullname}</Text>
                                         {!item.isread && <View style={styles.unreadDot} />}
                                     </View>
                                     <Text
                                         style={[
                                             styles.preview,
-                                            !item.isread && styles.unreadText, // in đậm nếu chưa đọc
+                                            !item.isread && styles.unreadText,
                                         ]}
                                         numberOfLines={1}
                                     >
