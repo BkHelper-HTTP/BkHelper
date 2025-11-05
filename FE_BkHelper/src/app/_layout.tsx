@@ -55,6 +55,15 @@ const RootLayout = () => {
               <Stack.Screen
                 name="notification/notification.message.detail"
                 options={{ headerShown: false }} />
+
+              <Stack.Screen
+                name="account/edit.profile.screen"
+                options={{ headerShown: false }} />
+
+              <Stack.Screen
+                name="forum/forum.details.screen"
+                options={{ headerShown: false }} />
+
             </Stack>
           </RootSiblingParent>
         </ThemeProvider>

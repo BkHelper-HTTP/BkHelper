@@ -112,7 +112,7 @@ export default function NotificationListScreen(props: IProps) {
         <View style={styles.container}>
             {isLoading ? (
                 <SkeletonNotificationList />
-            ) : (
+            ) : conversations.length > 0 ? (
                 <FlatList
                     data={conversations}
                     keyExtractor={(item) => item.id.toString()}
@@ -165,6 +165,10 @@ export default function NotificationListScreen(props: IProps) {
                         );
                     }}
                 />
+            ) : (
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <Text>Không có dữ liệu thông báo</Text>
+                </View>
             )}
 
         </View>
