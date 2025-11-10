@@ -1,0 +1,60 @@
+from fastapi import APIRouter, HTTPException, Response
+from pydantic import BaseModel
+from app.services.information_services import InformationService
+from app.services.notification_services import HCMUTLMSService
+
+router = APIRouter()
+
+class InfoRequest(BaseModel):
+    cookies: dict = None
+    token: str = None
+
+@router.post("/fetch-user-avatar")
+def fetch_user_avatar(data: InfoRequest):
+    """
+    API trả trực tiếp hình ảnh đại diện (avatar) của user hiện tại trên LMS HCMUT.
+    """
+    try:
+        # Khởi tạo service và truyền cookie đã đăng nhập
+        lms_service = HCMUTLMSService("", "")
+        lms_service.session.cookies.update(data.cookies)
+        lms_service.cookies = data.cookies
+
+        # Gọi service lấy thông tin người dùng
+        info_service = InformationService(lms_service.session, lms_service.cookies)
+        result = info_service.get_user_image()
+
+        # Tùy loại ảnh (jpg/png) mà xác định Content-Type
+        content_type = "image/jpeg"
+        if result["image_url"].lower().endswith(".png"):
+            content_type = "image/png"
+
+        # Trả ảnh trực tiếp
+        return Response(content=result["image_bytes"], media_type=content_type)
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.post("/fetch-user-information")
+def fetch_user_information(data: InfoRequest):
+    """
+    API trả thông tin chi tiết của user từ MyBK.
+    Chỉ cần token MyBK, không trả avatar (avatar đã có API riêng).
+    """
+    try:
+        if not data.token:
+            raise HTTPException(status_code=400, detail="Token MyBK chưa được cung cấp.")
+
+        # Khởi tạo InformationService chỉ với token MyBK
+        info_service = InformationService(mybk_token=data.token)
+
+        # Lấy user_id từ MyBK
+        user_id = info_service.get_mybk_user_id()
+
+        # Lấy thông tin chi tiết
+        user_detail = info_service.get_mybk_user_detail(user_id)
+
+        return {"user_detail": user_detail}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
