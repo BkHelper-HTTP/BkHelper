@@ -14,7 +14,14 @@
       "backgroundColor": "#0794DE"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "y",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +29,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.BkHelper"
+      "package": "com.anonymous.BkHelper",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "bundler": "metro",
@@ -34,6 +42,15 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5f1bf7e1-2f59-4ded-8421-032aa205a56e"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5f1bf7e1-2f59-4ded-8421-032aa205a56e"
     }
   }
 }
