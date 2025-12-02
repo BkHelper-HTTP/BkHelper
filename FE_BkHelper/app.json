@@ -2,6 +2,7 @@
   "expo": {
     "name": "BkHelper",
     "slug": "BkHelper",
+    "owner": "thien.caolehoan",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon3.png",
