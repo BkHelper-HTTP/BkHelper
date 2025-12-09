@@ -4,6 +4,14 @@ import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RootSiblingParent } from 'react-native-root-siblings';
+import * as Sentry from 'sentry-expo';
+
+Sentry.init({
+  dsn: "https://48cd84ef14e78358fd23d6a172b8da29@o4510499653419008.ingest.us.sentry.io/4510502713491456",
+  enableInExpoDevelopment: true,
+  debug: true,
+});
+
 const RootLayout = () => {
   const navTheme = {
     ...DefaultTheme,
@@ -12,6 +20,8 @@ const RootLayout = () => {
       background: 'transparent'
     },
   };
+
+  // Sentry.Native.captureException(new Error("Test error by student"));
 
   return (
     <GestureHandlerRootView >
