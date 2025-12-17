@@ -71,7 +71,19 @@ const RootLayout = () => {
                 options={{ headerShown: false }} />
 
               <Stack.Screen
+                name="forum/forum.view.screen"
+                options={{ headerShown: false }} />
+
+              <Stack.Screen
                 name="forum/forum.details.screen"
+                options={{ headerShown: false }} />
+
+              <Stack.Screen
+                name="forum/forum.add.screen"
+                options={{ headerShown: false }} />
+
+              <Stack.Screen
+                name="chat/chat.screen"
                 options={{ headerShown: false }} />
 
             </Stack>

@@ -1,138 +1,224 @@
-import { useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
   StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-
-export default function ForumDetailsScreen() {
-  const { id, title } = useLocalSearchParams();
-  const [posts, setPosts] = useState([
-    { id: "1", author: "Nguyễn Văn A", content: "Có ai hiểu bài 3 không vậy?" },
-    { id: "2", author: "Trần Thị B", content: "Mình có note lại, để mình chia sẻ file nhé!" },
-  ]);
-  const [text, setText] = useState("");
+const ForumDetailScreen = () => {
   const navigation = useNavigation();
 
-
-  const handlePost = () => {
-    if (text.trim()) {
-      setPosts([...posts, { id: Date.now().toString(), author: "Bạn", content: text }]);
-      setText("");
-    }
-  };
-
-  const renderItem = ({ item }: any) => (
-    <View style={styles.postCard}>
-      <Text style={styles.author}>{item.author}</Text>
-      <Text style={styles.content}>{item.content}</Text>
-    </View>
-  );
-
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Feather name="arrow-left" size={22} color="#000" />
-          </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Feather name="arrow-left" size={22} color="#000" />
+        </TouchableOpacity>
 
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {title}
+        <Text style={styles.headerTitle}>Khai phá dữ liệu - CO3029</Text>
+
+        <TouchableOpacity>
+          <Feather name="more-horizontal" size={22} color="#000" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* POST */}
+        <View style={styles.postCard}>
+          {/* User row */}
+          <View style={styles.userRow}>
+            <View style={styles.avatar} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.username}>User name</Text>
+              <Text style={styles.time}>03:00, 28/11/2025</Text>
+            </View>
+          </View>
+
+          {/* Title */}
+          <Text style={styles.postTitle}>Bài tập lớn 1</Text>
+
+          {/* Content */}
+          <Text style={styles.postContent}>
+            Deadline: 16/11/2025.{"\n"}
+            Presentation: 3 hoặc 4 tuần học cuối.{"\n"}
+            Chào cả lớp, về nội dung học qua LMS:{"\n"}
+            - File report, slides trình bày và giải thích kết quả.{"\n"}
+            - Source code đưa lên github và chèn link vào report trang bìa
+            (hoặc có thể nén).{"\n"}
+            - Video trình bày với sự tham gia của tất cả thành viên trong nhóm
+            (nếu không trình bày tại lớp), có thể đưa lên Youtube (đảm bảo video
+            có thể truy cập được), và đưa link vào report trang bìa.{"\n"}
+            Thời gian trình bày:{"\n"}
+            - Trên lớp: &lt; 15ph.{"\n"}
+            - Video: &lt; 20ph.
           </Text>
 
-          {/* View trống để giữ title luôn ở giữa */}
-          <View style={styles.backButton} />
+          {/* Actions */}
+          <View style={styles.actionRow}>
+            <View style={styles.actionItem}>
+              <Feather name="thumbs-up" size={18} />
+              <Text style={styles.actionText}>28</Text>
+            </View>
+
+            <View style={styles.actionItem}>
+              <Feather name="message-circle" size={18} />
+              <Text style={styles.actionText}>15</Text>
+            </View>
+
+            <Feather name="bookmark" size={18} />
+          </View>
         </View>
 
-        <FlatList
-          data={posts}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 80 }}
+        {/* COMMENT SECTION */}
+        <Text style={styles.commentTitle}>BÌNH LUẬN</Text>
+
+        <View style={styles.commentCard}>
+          <View style={styles.userRow}>
+            <View style={[styles.avatar, { backgroundColor: "#ff5252" }]} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.username}>User name</Text>
+              <Text style={styles.time}>30/11/2025</Text>
+            </View>
+          </View>
+
+          <Text style={styles.commentText}>Bình luận bài viết</Text>
+
+          <View style={styles.commentActions}>
+            <Feather name="thumbs-up" size={16} />
+            <Text style={{ marginLeft: 4 }}>0</Text>
+
+            <Text style={{ marginLeft: 12, color: "#007ACC" }}>
+              2 câu trả lời
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* INPUT COMMENT */}
+      <View style={styles.inputBox}>
+        <TextInput
+          placeholder="Viết bình luận..."
+          style={styles.input}
         />
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Nhập bình luận..."
-            value={text}
-            onChangeText={setText}
-          />
-          <TouchableOpacity style={styles.button} onPress={handlePost}>
-            <Text style={styles.buttonText}>Gửi</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity>
+          <Feather name="send" size={20} color="#007ACC" />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
-}
+};
+
+export default ForumDetailScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9f9f9", padding: 12 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+    justifyContent: "space-between",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  container: {
+    padding: 16,
+    paddingBottom: 80,
+  },
+
   postCard: {
     backgroundColor: "#fff",
     borderRadius: 10,
-    padding: 10,
-    marginVertical: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    padding: 12,
+    marginBottom: 16,
   },
-  author: { fontWeight: "600", color: "#007ACC" },
-  content: { marginTop: 4, color: "#333" },
-  inputContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  userRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 8,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#e53935",
+    marginRight: 8,
+  },
+  username: {
+    fontWeight: "600",
+  },
+  time: {
+    fontSize: 12,
+    color: "#888",
+  },
+
+  postTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginVertical: 6,
+  },
+  postContent: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#333",
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    justifyContent: "space-between",
+  },
+  actionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionText: {
+    marginLeft: 4,
+  },
+
+  commentTitle: {
+    fontWeight: "700",
+    marginVertical: 8,
+  },
+  commentCard: {
     backgroundColor: "#fff",
-    padding: 8,
+    padding: 10,
+    borderRadius: 10,
+  },
+  commentText: {
+    marginTop: 6,
+    fontSize: 14,
+  },
+  commentActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+  },
+
+  inputBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
     borderTopWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#eee",
+    backgroundColor: "#fff",
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
     padding: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 20,
+    marginRight: 8,
   },
-  button: {
-    backgroundColor: "#007ACC",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  buttonText: { color: "#fff", fontWeight: "600" },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 40,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#007ACC',
-  },
-
 });
