@@ -26,8 +26,8 @@ class DiscussionResponse(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime]
 
-    class Config:
-        orm_mode = True
+    # class Config:
+    #     orm_mode = True
 
 router = APIRouter()
 
