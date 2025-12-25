@@ -94,17 +94,17 @@ class HCMUTLMSService:
 def login_all(username: str, password: str):
     cas = HCMUTCASBase(username, password)
     
-    # 🟢 Bước 1: Login CAS
+    # Bước 1: Login CAS
     redirect_url, session = cas.cas_login("https://mybk.hcmut.edu.vn/app/login/cas")
 
-    # 🟢 Bước 2: Follow redirect_url để xác thực ticket trên MyBK
+    # Bước 2: Follow redirect_url để xác thực ticket trên MyBK
     session.get(redirect_url, allow_redirects=True)
 
-    # 🟢 Bước 3: Lúc này session đã hợp lệ → có thể login MyBK
+    # Bước 3: Lúc này session đã hợp lệ → có thể login MyBK
     mybk = HCMUTMyBKService(session)
     mybk_data = mybk.login()
 
-    # 🟢 Bước 4: Login LMS (chung session)
+    # Bước 4: Login LMS (chung session)
     lms = HCMUTLMSService(session)
     lms_data = lms.login()
 
@@ -127,7 +127,7 @@ def logout_all(self, sesskey: str):
     try:
         results = {}
 
-        # 1️⃣ Logout Moodle (LMS)
+        # 1️ Logout Moodle (LMS)
         moodle_logout_url = f"https://lms.hcmut.edu.vn/login/logout.php?sesskey={sesskey}"
         res1 = self.session.get(moodle_logout_url, headers=headers, allow_redirects=False)
 
@@ -135,7 +135,7 @@ def logout_all(self, sesskey: str):
             cas_logout_url = res1.headers['Location']
             results['lms_redirect'] = cas_logout_url
 
-            # 2️⃣ CAS logout (hệ thống SSO dùng chung với MyBK)
+            # 2️ CAS logout (hệ thống SSO dùng chung với MyBK)
             res2 = self.session.get(cas_logout_url, headers=headers, allow_redirects=False)
 
             if 'Location' in res2.headers:
@@ -147,13 +147,13 @@ def logout_all(self, sesskey: str):
         else:
             results['lms'] = f"Logout LMS không redirect (code {res1.status_code})"
 
-        # 3️⃣ Logout MyBK (nếu có SESSION cookie)
+        # 3️ Logout MyBK (nếu có SESSION cookie)
         if 'SESSION' in self.session.cookies.get_dict():
             mybk_logout_url = "https://mybk.hcmut.edu.vn/app/logout"
             res3 = self.session.get(mybk_logout_url, headers=headers, allow_redirects=False)
             results['mybk'] = f"MyBK logout status {res3.status_code}"
 
-        # 4️⃣ Xóa toàn bộ cookie local
+        # 4️ Xóa toàn bộ cookie local
         self.session.cookies.clear()
 
         return {
@@ -168,59 +168,6 @@ def logout_all(self, sesskey: str):
             'msg': f'Lỗi khi logout_all: {e}'
         }
     
-# def logout_all(session: requests.Session, sesskey: str):
-#     """
-#     Đăng xuất khỏi cả LMS và MyBK (CAS logout toàn cục)
-#     """
-#     headers = {
-#         'User-Agent': 'Mozilla/5.0',
-#         'Referer': 'https://lms.hcmut.edu.vn',
-#         'Origin': 'https://lms.hcmut.edu.vn'
-#     }
-
-#     try:
-#         results = {}
-
-#         # 1️⃣ Logout LMS (Moodle)
-#         moodle_logout_url = f"https://lms.hcmut.edu.vn/login/logout.php?sesskey={sesskey}"
-#         res1 = session.get(moodle_logout_url, headers=headers, allow_redirects=False)
-
-#         if res1.status_code == 302 and 'Location' in res1.headers:
-#             cas_logout_url = res1.headers['Location']
-#             results['lms_redirect'] = cas_logout_url
-
-#             # 2️⃣ CAS logout
-#             res2 = session.get(cas_logout_url, headers=headers, allow_redirects=False)
-
-#             if 'Location' in res2.headers:
-#                 final_url = res2.headers['Location']
-#                 session.get(final_url, headers=headers, allow_redirects=False)
-#                 results['cas_final'] = final_url
-#             else:
-#                 results['cas_final'] = cas_logout_url
-#         else:
-#             results['lms'] = f"Logout LMS không redirect (code {res1.status_code})"
-
-#         # 3️⃣ Logout MyBK (nếu có SESSION cookie)
-#         if 'SESSION' in session.cookies.get_dict():
-#             mybk_logout_url = "https://mybk.hcmut.edu.vn/app/logout"
-#             res3 = session.get(mybk_logout_url, headers=headers, allow_redirects=False)
-#             results['mybk'] = f"MyBK logout status {res3.status_code}"
-
-#         # 4️⃣ Xóa toàn bộ cookie local
-#         session.cookies.clear()
-
-#         return {
-#             'ok': True,
-#             'msg': 'Đã logout toàn bộ (LMS + CAS + MyBK)',
-#             'details': results
-#         }
-
-#     except Exception as e:
-#         return {
-#             'ok': False,
-#             'msg': f'Lỗi khi logout_all: {e}'
-#         }
 
 def logout_all(session: requests.Session, sesskey: str):
     """
@@ -235,7 +182,7 @@ def logout_all(session: requests.Session, sesskey: str):
     try:
         results = {}
 
-        # 1️⃣ Logout LMS (Moodle)
+        # 1️ Logout LMS (Moodle)
         moodle_logout_url = f"https://lms.hcmut.edu.vn/login/logout.php?sesskey={sesskey}"
         res1 = session.get(moodle_logout_url, headers=headers, allow_redirects=False)
 
@@ -243,7 +190,7 @@ def logout_all(session: requests.Session, sesskey: str):
             cas_logout_url = res1.headers['Location']
             results['lms_redirect'] = cas_logout_url
 
-            # 2️⃣ CAS logout (theo redirect từ LMS)
+            # 2️ CAS logout (theo redirect từ LMS)
             res2 = session.get(cas_logout_url, headers=headers, allow_redirects=False)
 
             if 'Location' in res2.headers:
@@ -255,7 +202,7 @@ def logout_all(session: requests.Session, sesskey: str):
         else:
             results['lms'] = f"Logout LMS không redirect (code {res1.status_code})"
 
-        # 3️⃣ Logout MyBK (nếu có SESSION cookie)
+        # 3️ Logout MyBK (nếu có SESSION cookie)
         cookies = session.cookies.get_dict()
         if 'SESSION' in cookies:
             # 🔹 Gọi đúng endpoint MyBK logout (bạn đã sniff)
@@ -280,7 +227,7 @@ def logout_all(session: requests.Session, sesskey: str):
         else:
             results['mybk'] = "Không có SESSION cookie, bỏ qua logout MyBK."
 
-        # 4️⃣ Dọn toàn bộ session cookies
+        # 4 Dọn toàn bộ session cookies
         session.cookies.clear()
 
         return {
