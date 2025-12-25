@@ -1,16 +1,8 @@
+import ListCourseModal from "@/components/modal/listcourse.modal";
 import { router, useNavigation } from "expo-router";
 import React from "react";
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-interface ICourse {
-    id: string,
-    title: string,
-    teacher: string,
-    code: string,
-    department: string,
-    color: string
-}
 
 const courses = [
     {
@@ -94,15 +86,22 @@ const courses = [
 ];
 const HomeTab = () => {
     const navigation = useNavigation()
+    const [visible, setVisible] = React.useState(false);
+    const [selectedCourse, setSelectedCourse] = React.useState<ICourse | null>(null);
+
 
     const renderItem = ({ item }: { item: ICourse }) => (
         <TouchableOpacity
             style={styles.card}
-            onPress={() => router.push({
-                pathname: "/forum/forum.details.screen",
-                params: { id: item.id, title: item.title }
+            // onPress={() => router.push({
+            //     pathname: "/forum/forum.details.screen",
+            //     params: { id: item.id, title: item.title }
 
-            })}
+            // })}
+            onPress={() => {
+                setSelectedCourse(item);
+                setVisible(true);
+            }}
         >
             <View style={[styles.colorBox, { backgroundColor: item.color }]} />
             <View style={{ flex: 1 }}>
@@ -126,6 +125,12 @@ const HomeTab = () => {
                     ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
                 />
             </View>
+            <ListCourseModal
+                visible={visible}
+                setVisible={setVisible}
+                selectedCourse={selectedCourse}
+                setSelectedCourse={setSelectedCourse}
+            />
         </SafeAreaView>
     );
 }

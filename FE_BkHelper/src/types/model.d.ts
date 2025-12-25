@@ -172,4 +172,13 @@ declare global {
         status: string
         data: IScheduleSection[]
     }
+
+    interface ICourse {
+        id: string,
+        title: string,
+        teacher: string,
+        code: string,
+        department: string,
+        color: string
+    }
 }
