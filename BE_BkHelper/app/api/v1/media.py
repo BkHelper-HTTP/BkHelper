@@ -34,7 +34,7 @@ def upload_media(
     }
 
 
-@router.get("/get_media")
+@router.get("/get_media/{discussion_id}")
 def get_media(
     discussion_id: str,
     db: Session = Depends(get_db)

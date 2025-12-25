@@ -44,7 +44,7 @@ def create_discussion(
     )
 
 
-@router.get("/list_discussions")
+@router.get("/list_discussions/{forum_id}")
 def list_discussions(
     forum_id: str,
     db = Depends(get_db)
@@ -58,8 +58,12 @@ def get_discussion(
     discussion_id: str,
     db = Depends(get_db)
 ):
-    discussion = discussion_services.get_discussion(db, discussion_id)
-    return {"status": "success", "data": discussion}
+    discussion, media_list = discussion_services.get_discussion(db, discussion_id)
+    return {
+        "status": "success", 
+        "data": discussion,
+        "media": media_list
+    }
 
 
 @router.patch("/update_discussion/{discussion_id}")

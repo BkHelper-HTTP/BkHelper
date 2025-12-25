@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models.discussion import Discussion
+from app.models.media import Media
 from fastapi import HTTPException
 
 def create_discussion(db: Session, user_id: str, data):
@@ -31,8 +32,12 @@ def get_discussion(db: Session, discussion_id: str):
 
     if not discussion:
         raise HTTPException(status_code=404, detail="Discussion not found")
+    
+    media_list = db.query(Media).filter(
+        Media.discussion_id == discussion_id
+    ).all()
 
-    return discussion
+    return discussion, media_list
 
 
 def update_discussion(db: Session, discussion: Discussion, user_id: str, data):

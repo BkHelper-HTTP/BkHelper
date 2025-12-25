@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-class CreateForum(BaseModel):
+class Forum(BaseModel):
     forum_name: str
     course_id: str
     course_code: str
@@ -16,9 +16,9 @@ class CreateForum(BaseModel):
     teacher_email: str
     semester: str
 
-@router.post("/create_forum")
-def create_forum(
-    data: CreateForum,
+@router.post("/forum")
+def forum(
+    data: Forum,
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
