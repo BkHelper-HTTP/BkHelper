@@ -68,10 +68,10 @@ def unified_login(data: LoginSchema, db=Depends(get_db)):
             avatar_url=image_bytes
         )
 
-        if is_new:
-            avatar_url = upload_avatar(image_bytes, student_code)
-            user.avatar_url = avatar_url
-            db.commit()
+        # if is_new:
+        #     avatar_url = upload_avatar(image_bytes, student_code)
+        #     user.avatar_url = avatar_url
+        #     db.commit()
 
         # ---- TẠO JWT ----
         access_token = create_access_token({
