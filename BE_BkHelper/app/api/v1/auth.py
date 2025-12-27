@@ -52,13 +52,7 @@ def unified_login(data: LoginSchema, db=Depends(get_db)):
         last_name = user_detail["lastName"]
         email = user_detail["orgEmail"]
     
-        # avatar_url = upload_avatar(
-        #         image_bytes,
-        #         student_code=student_code
-        #     )
-
-        # ---- LƯU USER ----
-        user, is_new = get_or_create_user(
+        user = get_or_create_user(
             db,
             lms_id=lms_userid,
             student_code=student_code,
@@ -68,10 +62,6 @@ def unified_login(data: LoginSchema, db=Depends(get_db)):
             avatar_url=image_bytes
         )
 
-        # if is_new:
-        #     avatar_url = upload_avatar(image_bytes, student_code)
-        #     user.avatar_url = avatar_url
-        #     db.commit()
 
         # ---- TẠO JWT ----
         access_token = create_access_token({
