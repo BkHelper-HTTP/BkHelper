@@ -6,7 +6,7 @@ def get_or_create_user(db, *, lms_id, student_code, first_name, last_name, email
     user = db.query(User).filter(User.student_code == student_code).first()
 
     if user:
-        return user
+        return user, False
     
     avatar_url1 = upload_avatar(avatar_url, student_code)
 
@@ -21,4 +21,4 @@ def get_or_create_user(db, *, lms_id, student_code, first_name, last_name, email
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    return user, True

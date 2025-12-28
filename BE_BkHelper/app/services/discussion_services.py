@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models.discussion import Discussion
+from app.services import information_services
 from app.models.media import Media
 from fastapi import HTTPException
 
@@ -18,10 +19,30 @@ def create_discussion(db: Session, user_id: str, data):
 
 
 def list_discussions(db: Session, forum_id: str):
-    return db.query(Discussion).filter(
+    discussions = db.query(Discussion).filter(
         Discussion.forum_id == forum_id,
         Discussion.is_deleted == False
     ).order_by(Discussion.created_at.desc()).all()
+
+    if not discussions:
+        return []
+    
+    result = []
+    for discussion in discussions:
+        user_data = information_services.get_user_info(db, discussion.user_id)
+        discussion_data = {
+            "discussion_id": discussion.discussion_id,
+            "forum_id": discussion.forum_id,
+            "user_id": discussion.user_id,
+            "title": discussion.title,
+            "content": discussion.content,
+            "created_at": discussion.created_at,
+            "updated_at": discussion.updated_at,
+            "user": user_data
+        }
+        result.append(discussion_data)
+    
+    return result
 
 
 def get_discussion(db: Session, discussion_id: str):
@@ -37,7 +58,23 @@ def get_discussion(db: Session, discussion_id: str):
         Media.discussion_id == discussion_id
     ).all()
 
-    return discussion, media_list
+    user_data = information_services.get_user_info(db, discussion.user_id)
+
+    # discussion_data = {
+    #     "discussion_id": discussion.discussion_id,
+    #     "forum_id": discussion.forum_id,
+    #     "user_id": discussion.user_id,
+    #     "title": discussion.title,
+    #     "content": discussion.content,
+    #     "created_at": discussion.created_at,
+    #     "updated_at": discussion.updated_at
+    # }
+    # return {
+    #     **discussion_data,
+    #     "user": user_data,
+    #     "media": media_list
+    # }
+    return discussion, media_list, user_data
 
 
 def update_discussion(db: Session, discussion: Discussion, user_id: str, data):

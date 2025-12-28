@@ -1,7 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-
+from sqlalchemy.orm import Session
+from app.models.user import User
+from fastapi import HTTPException
 
 class InformationService:
     LMS_BASE_URL = "https://lms.hcmut.edu.vn/"
@@ -108,3 +110,12 @@ class InformationService:
         if res.status_code != 200:
             raise Exception(f"Failed to get MyBK user detail ({res.status_code})")
         return res.json()
+    
+def get_user_info(db: Session, user_id: str):
+    user = db.query(User).filter(
+        User.user_id == user_id,
+    ).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+    

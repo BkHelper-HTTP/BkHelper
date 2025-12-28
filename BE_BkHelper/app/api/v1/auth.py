@@ -2,9 +2,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 import requests
-from app.services.scraping import HCMUTCASBase, HCMUTLMSService, HCMUTMyBKService, login_all, logout_all
+from app.services.scraping import login_all, logout_all
 from app.services.information_services import InformationService
-from app.services.avatar_services import upload_avatar
+from app.services.schedule_services import HCMUTMyBKService
+from app.services.course_services import create_courses_from_schedule
 from app.db.deps import get_db
 from app.core.security import create_access_token
 from app.db.crud.user import get_or_create_user
@@ -52,7 +53,7 @@ def unified_login(data: LoginSchema, db=Depends(get_db)):
         last_name = user_detail["lastName"]
         email = user_detail["orgEmail"]
     
-        user = get_or_create_user(
+        user, is_new = get_or_create_user(
             db,
             lms_id=lms_userid,
             student_code=student_code,
@@ -62,10 +63,18 @@ def unified_login(data: LoginSchema, db=Depends(get_db)):
             avatar_url=image_bytes
         )
 
+        if is_new:
+            service = HCMUTMyBKService(token=result["mybk"]["token"], cookies=result["mybk"]["cookies"])
+            # semester_year = data.semester_year
+            # if semester_year is None or semester_year.lower() == "null":
+            semester_year = service.get_current_semester_year()
+
+            schedule = service.get_full_schedule(semester_year)
+            create_courses_from_schedule(db=db, user_id=user.user_id, schedule=schedule)
 
         # ---- TẠO JWT ----
         access_token = create_access_token({
-            "sub": user.user_id,
+            "user_id": user.user_id,
             "student_code": user.student_code
         })
 

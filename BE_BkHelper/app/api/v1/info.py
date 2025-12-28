@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, Depends
 from pydantic import BaseModel
+from app.db.deps import get_db
 from app.services.information_services import InformationService
+from app.services import information_services
 from app.services.notification_services import HCMUTLMSService
 
 router = APIRouter()
@@ -8,6 +10,10 @@ router = APIRouter()
 class InfoRequest(BaseModel):
     cookies: dict = None
     token: str = None
+
+class User(BaseModel):
+    user_id: str
+
 
 @router.post("/fetch-user-avatar")
 def fetch_user_avatar(data: InfoRequest):
@@ -58,3 +64,8 @@ def fetch_user_information(data: InfoRequest):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+@router.get("/user-info/{user_id}")
+def get_user_info(user_id: str, db = Depends(get_db)):
+    user = information_services.get_user_info(user_id=user_id, db=db)
+    return {user}

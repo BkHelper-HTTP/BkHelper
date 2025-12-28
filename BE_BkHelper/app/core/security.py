@@ -39,7 +39,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             algorithms=[JWT_ALGORITHM]
         )
 
-        user_id = payload.get("sub")
+        user_id = payload.get("user_id")
         student_code = payload.get("student_code")
 
         if not user_id:
