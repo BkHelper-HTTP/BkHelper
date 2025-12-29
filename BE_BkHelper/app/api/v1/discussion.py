@@ -58,7 +58,7 @@ def get_discussion(
     discussion_id: str,
     db = Depends(get_db)
 ):
-    discussion, media_list, user_data = discussion_services.get_discussion(db, discussion_id)
+    discussion, media_list, user_data, comment_data = discussion_services.get_discussion(db, discussion_id)
     discussion_data = {
         "discussion_id": discussion.discussion_id,
         "forum_id": discussion.forum_id,
@@ -68,17 +68,13 @@ def get_discussion(
         "created_at": discussion.created_at,
         "updated_at": discussion.updated_at,
         "user": user_data,
-        "media": media_list
+        "media": media_list,
+        "comment": comment_data
     }
     
     return {
         "status": "success",
         "data": discussion_data
-    }
-    return {
-        "status": "success", 
-        "data": discussion,
-        "media": media_list
     }
 
 
@@ -89,7 +85,7 @@ def update_discussion(
     db = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    discussion, media_list, user_data = discussion_services.get_discussion(db, discussion_id)
+    discussion, media_list, user_data, comment_data = discussion_services.get_discussion(db, discussion_id)
     updated = discussion_services.update_discussion(
         db, discussion, current_user["user_id"], data
     )
@@ -102,7 +98,7 @@ def delete_discussion(
     db = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    discussion, media_list, user_data = discussion_services.get_discussion(db, discussion_id)
+    discussion, media_list, user_data, comment_data = discussion_services.get_discussion(db, discussion_id)
     discussion_services.soft_delete_discussion(
         db, discussion, current_user["user_id"]
     )

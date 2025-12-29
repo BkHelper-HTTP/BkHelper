@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from app.models.discussion import Discussion
 from app.services import information_services
+from app.services import comment_services
 from app.models.media import Media
 from fastapi import HTTPException
 
@@ -60,21 +61,9 @@ def get_discussion(db: Session, discussion_id: str):
 
     user_data = information_services.get_user_info(db, discussion.user_id)
 
-    # discussion_data = {
-    #     "discussion_id": discussion.discussion_id,
-    #     "forum_id": discussion.forum_id,
-    #     "user_id": discussion.user_id,
-    #     "title": discussion.title,
-    #     "content": discussion.content,
-    #     "created_at": discussion.created_at,
-    #     "updated_at": discussion.updated_at
-    # }
-    # return {
-    #     **discussion_data,
-    #     "user": user_data,
-    #     "media": media_list
-    # }
-    return discussion, media_list, user_data
+    comment_data = comment_services.get_comments(db, discussion_id=discussion_id)
+
+    return discussion, media_list, user_data, comment_data
 
 
 def update_discussion(db: Session, discussion: Discussion, user_id: str, data):
