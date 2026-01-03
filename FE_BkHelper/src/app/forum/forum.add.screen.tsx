@@ -1,30 +1,26 @@
 import React, { useState } from "react";
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 
 const ForumAddScreen = () => {
     const navigation = useNavigation();
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
+    const { forum_name, course_code } = useLocalSearchParams()
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
             {/* HEADER */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Feather name="x" size={22} color="#000" />
+                    <Feather name="x" size={30} color="#000" />
                 </TouchableOpacity>
 
                 <Text style={styles.headerTitle}>
-                    Khai phá dữ liệu - CO3029
+                    {`${forum_name} - ${course_code}`}
                 </Text>
 
                 <TouchableOpacity>
@@ -80,8 +76,10 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
     headerTitle: {
+        width: 300,
         fontSize: 15,
         fontWeight: "600",
+        textAlign: "center"
     },
 
     container: {

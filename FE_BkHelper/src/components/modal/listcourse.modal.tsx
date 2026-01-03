@@ -1,6 +1,8 @@
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { router, useNavigation } from "expo-router";
 import { APP_COLOR } from "@/utils/constant";
+import { fetchForumAPI } from "@/utils/api";
+import Toast from "react-native-root-toast";
 
 interface IProps {
     visible: boolean;
@@ -11,6 +13,30 @@ interface IProps {
 
 const ListCourseModal = (props: IProps) => {
     const { visible, setVisible, selectedCourse, setSelectedCourse } = props
+
+    const handleForumCreate = async () => {
+        setVisible(false);
+        const res = await fetchForumAPI("Phát triDi động", "5378458", "CO300", "Nguyen", "An", "an.nguyen@hcmut.edu.vn", "20251")
+        if (res && res.status === "success") {
+            router.push({
+                pathname: "/forum/forum.view.screen",
+                params: {
+                    forum_id: res.forum.forum_id,
+                    forum_name: res.forum.forum_name,
+                    course_code: res.forum.course_code
+                }
+            });
+        } else {
+            Toast.show("Forum create failed", {
+                duration: Toast.durations.LONG,
+                textColor: "white",
+                backgroundColor: "red",
+                opacity: 1,
+                position: Toast.positions.BOTTOM
+            });
+        }
+
+    }
 
     return (
         <Modal
@@ -87,10 +113,7 @@ const ListCourseModal = (props: IProps) => {
 
                         <TouchableOpacity
                             style={[styles.actionBtn, { backgroundColor: APP_COLOR.GREY }]}
-                            onPress={() => {
-                                setVisible(false);
-                                router.push("/forum/forum.view.screen");
-                            }}
+                            onPress={handleForumCreate}
                         >
                             <Text style={[styles.actionText, { color: APP_COLOR.DARK_BLUE }]}>
                                 Forum

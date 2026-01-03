@@ -67,7 +67,7 @@ const RootLayout = () => {
                 options={{ headerShown: false }} />
 
               <Stack.Screen
-                name="account/edit.profile.screen"
+                name="account/view.profile.screen"
                 options={{ headerShown: false }} />
 
               <Stack.Screen

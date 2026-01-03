@@ -3,13 +3,40 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { router } from "expo-router";
 import { APP_COLOR } from '@/utils/constant';
+import { logOutAPI } from '@/utils/api';
+import { useCurrentApp } from '@/context/app.context';
+import Toast from 'react-native-root-toast';
 
 const AccountTab = () => {
     const navigation = useNavigation<any>();
+    const { appState } = useCurrentApp()
+
+    const handleLogOut = async () => {
+        if (appState && appState?.lms.sesskey, appState?.lms.cookies.JSESSIONID, appState?.lms.cookies.CASTGC, appState?.lms.cookies.SESSION, appState?.lms.cookies.MoodleSession, appState?.lms.cookies.MOODLEID1_) {
+            const res = await logOutAPI(appState?.lms.sesskey, appState?.lms.cookies.JSESSIONID, appState?.lms.cookies.CASTGC, appState?.lms.cookies.SESSION, appState?.lms.cookies.MoodleSession, appState?.lms.cookies.MOODLEID1_)
+            if (res && res.status === "success") {
+                Toast.show("User logout successfully", {
+                    duration: Toast.durations.LONG,
+                    textColor: "white",
+                    backgroundColor: "green",
+                    opacity: 1,
+                    position: Toast.positions.BOTTOM
+                });
+                router.navigate("/(auth)/welcome")
+            } else {
+                Toast.show("User logout failed", {
+                    duration: Toast.durations.LONG,
+                    textColor: "white",
+                    backgroundColor: "red",
+                    opacity: 1,
+                    position: Toast.positions.BOTTOM
+                });
+            }
+        }
+    }
 
     return (
         <View style={styles.container}>
@@ -31,34 +58,29 @@ const AccountTab = () => {
             <View style={styles.menu}>
                 <TouchableOpacity
                     style={styles.menuItem}
-                    onPress={() => router.navigate("/account/edit.profile.screen")}
+                    onPress={() => router.navigate("/account/view.profile.screen")}
                 >
                     <View style={styles.menuLeft}>
                         <FontAwesome5 name="user-edit" size={18} color={APP_COLOR.BLUE} />
-                        <Text style={styles.menuText}>Edit Profile</Text>
+                        <Text style={styles.menuText}>View Profile</Text>
                     </View>
                     <Entypo name="chevron-right" size={20} color="#555" />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.menuItem}>
+                <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => router.navigate("/(tabs)/notification")}
+                >
                     <View style={styles.menuLeft}>
                         <Feather name="bell" size={20} color={APP_COLOR.BLUE} />
                         <Text style={styles.menuText}>Notification</Text>
                     </View>
                     <Entypo name="chevron-right" size={20} color="#555" />
                 </TouchableOpacity>
-
-                <TouchableOpacity style={styles.menuItem}>
-                    <View style={styles.menuLeft}>
-                        <MaterialIcons name="lock-outline" size={22} color={APP_COLOR.BLUE} />
-                        <Text style={styles.menuText}>Change Password</Text>
-                    </View>
-                    <Entypo name="chevron-right" size={20} color="#555" />
-                </TouchableOpacity>
             </View>
 
             {/* Sign Out */}
-            <TouchableOpacity style={styles.signOutBtn}>
+            <TouchableOpacity style={styles.signOutBtn} onPress={handleLogOut}>
                 <Feather name="log-out" size={18} color="#fff" />
                 <Text style={styles.signOutText}>Sign Out</Text>
             </TouchableOpacity>
