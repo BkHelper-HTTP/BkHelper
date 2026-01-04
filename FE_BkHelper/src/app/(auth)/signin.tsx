@@ -17,11 +17,6 @@ const styles = StyleSheet.create({
     container: { flex: 0.8, marginHorizontal: 20, gap: 10 },
 });
 
-const backend =
-    Platform.OS === "android"
-        ? process.env.EXPO_PUBLIC_ANDROID_API_URL
-        : process.env.EXPO_PUBLIC_IOS_API_URL;
-
 const SignInPage = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const { setAppState } = useCurrentApp()
@@ -32,7 +27,7 @@ const SignInPage = () => {
             const res = await lmsLoginAPI(username, password);
             if (res.status === "success") {
                 setAppState(res);
-                await AsyncStorage.setItem("sesskey", res.lms.sesskey)
+                await AsyncStorage.setItem("access_token", res.access_token)
                 router.replace({ pathname: "/(tabs)" });
             } else {
                 Toast.show("Sign in not successfully", {

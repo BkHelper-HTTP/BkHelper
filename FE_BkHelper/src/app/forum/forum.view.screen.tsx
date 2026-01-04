@@ -1,17 +1,12 @@
-import React, { useState } from "react";
-import {
-    View,
-    Text,
-    FlatList,
-    TouchableOpacity,
-    StyleSheet,
-    TextInput
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, AntDesign, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { router } from "expo-router";
+import { getListDiscussionAPI } from "@/utils/api";
+import Toast from "react-native-root-toast";
 
 const mockPosts = [
     {
@@ -40,23 +35,83 @@ const ForumViewScreen = () => {
     const { title } = useLocalSearchParams();
     const [search, setSearch] = useState("");
     const [activeTab, setActiveTab] = useState("all");
+    const { forum_id, forum_name, course_code } = useLocalSearchParams()
+    const [discussions, setDiscussions] = useState<DiscussionItem[]>([])
 
-    const renderPost = ({ item }: any) => (
+    useEffect(() => {
+        const fetchListDiscussion = async () => {
+            const res = await getListDiscussionAPI(forum_id as string)
+            if (res && res.status === "success") {
+                setDiscussions(res.data)
+            } else {
+                Toast.show("Get discussions failed", {
+                    duration: Toast.durations.LONG,
+                    textColor: "white",
+                    backgroundColor: "red",
+                    opacity: 1,
+                    position: Toast.positions.BOTTOM
+                });
+            }
+        }
+        fetchListDiscussion()
+    }, [])
+
+    const formatPostTime = (iso: string) => {
+        if (!iso) return "";
+
+        // Parse time + cộng 7 tiếng (VN)
+        const date = new Date(iso);
+        date.setHours(date.getHours() + 7);
+
+        const now = new Date();
+        const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (diff < 60) return "Vừa mới";
+        if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+
+        if (
+            date.getFullYear() === yesterday.getFullYear() &&
+            date.getMonth() === yesterday.getMonth() &&
+            date.getDate() === yesterday.getDate()
+        ) {
+            return `Hôm qua · ${date.getHours().toString().padStart(2, "0")}:${date
+                .getMinutes()
+                .toString()
+                .padStart(2, "0")}`;
+        }
+
+        return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}/${date.getFullYear()} · ${date
+                .getHours()
+                .toString()
+                .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+    };
+
+
+    const renderPost = ({ item }: { item: DiscussionItem }) => (
         <TouchableOpacity
-            // style={styles.card}
             onPress={() => router.push({
                 pathname: "/forum/forum.details.screen",
-                params: { id: item.id, title: item.title }
-
+                params: { discussion_id: item.discussion_id, forum_name: forum_name, course_code: course_code }
             })}
         >
             <View style={styles.postCard}>
                 {/* Header */}
                 <View style={styles.postHeader}>
-                    <View style={styles.avatar} />
+                    <Image
+                        source={{
+                            uri: item.user.avatar_url || "https://ui-avatars.com/api/?name=User"
+                        }}
+                        style={styles.avatar}
+                    />
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.username}>{item.user}</Text>
-                        <Text style={styles.time}>{item.time}</Text>
+                        <Text style={styles.username}>{`${item.user.last_name} ${item.user.first_name}`}</Text>
+                        <Text style={styles.time}>{formatPostTime(item.created_at)}</Text>
                     </View>
                 </View>
 
@@ -70,12 +125,12 @@ const ForumViewScreen = () => {
                 <View style={styles.actionRow}>
                     <View style={styles.actionItem}>
                         <AntDesign name="like2" size={18} color="#444" />
-                        <Text style={styles.actionText}>{item.likes}</Text>
+                        <Text style={styles.actionText}>20</Text>
                     </View>
 
                     <View style={styles.actionItem}>
                         <Ionicons name="chatbubble-outline" size={18} color="#444" />
-                        <Text style={styles.actionText}>{item.comments}</Text>
+                        <Text style={styles.actionText}>20</Text>
                     </View>
 
                     <Ionicons name="bookmark-outline" size={18} color="#444" />
@@ -90,12 +145,12 @@ const ForumViewScreen = () => {
                 {/* HEADER */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Feather name="arrow-left" size={22} color="#000" />
+                        <Feather name="arrow-left" size={30} color="#000" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>
-                        {title || "Khai phá dữ liệu - CO3029"}
+                        {`${forum_name} - ${course_code}`}
                     </Text>
-                    <View style={{ width: 22 }} />
+                    <View style={{ width: "auto" }} />
                 </View>
 
                 {/* FILTER */}
@@ -133,10 +188,15 @@ const ForumViewScreen = () => {
 
                 {/* LIST */}
                 <FlatList
-                    data={mockPosts}
-                    keyExtractor={(item) => item.id}
+                    data={discussions}
+                    keyExtractor={(item) => item.discussion_id}
                     renderItem={renderPost}
                     contentContainerStyle={{ paddingBottom: 100 }}
+                    ListEmptyComponent={
+                        <Text style={{ textAlign: "center", marginTop: 20, color: "#777" }}>
+                            Chưa có bài thảo luận nào
+                        </Text>
+                    }
                 />
 
                 {/* FLOATING BUTTON */}
@@ -144,6 +204,7 @@ const ForumViewScreen = () => {
                     style={styles.fab}
                     onPress={() => router.push({
                         pathname: "/forum/forum.add.screen",
+                        params: { forum_name: forum_name, course_code: course_code }
                     })}
                 >
                     <Feather name="edit-2" size={22} color="#fff" />
@@ -178,7 +239,9 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     headerTitle: {
-        fontSize: 16,
+        width: 300,
+        textAlign: "center",
+        fontSize: 15,
         fontWeight: "600",
     },
     filterRow: {
@@ -212,11 +275,14 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     avatar: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: "red",
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         marginRight: 10,
+        backgroundColor: "#e0e0e0",
+        borderWidth: 1,
+        borderColor: "#ddd",
+
     },
     username: {
         fontWeight: "600",

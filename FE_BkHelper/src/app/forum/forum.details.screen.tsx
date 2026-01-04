@@ -1,28 +1,92 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
+import { getDiscussionAPI } from "@/utils/api";
+import Toast from "react-native-root-toast";
+import MediaGallery from "./media.gallery";
+import CommentItem from "./comment.item";
+
 
 const ForumDetailScreen = () => {
   const navigation = useNavigation();
+  const { discussion_id, forum_name, course_code } = useLocalSearchParams()
+  const [discussionDetail, setDiscussionDetail] = useState<IGetDiscussionAPI | null>(null)
+
+
+  useEffect(() => {
+    const fetchDiscussion = async () => {
+      const res = await getDiscussionAPI(discussion_id as string)
+      if (res && res.status === "success") {
+        setDiscussionDetail(res)
+      } else {
+        Toast.show("Get detail discussion failed", {
+          duration: Toast.durations.LONG,
+          textColor: "white",
+          backgroundColor: "red",
+          opacity: 1,
+          position: Toast.positions.BOTTOM
+        });
+      }
+    }
+    fetchDiscussion()
+  }, [])
+
+  const formatPostTime = (iso: string) => {
+    if (!iso) return "";
+
+    // Parse time + cộng 7 tiếng (VN)
+    const date = new Date(iso);
+    date.setHours(date.getHours() + 7);
+
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diff < 60) return "Vừa mới";
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+
+    if (
+      date.getFullYear() === yesterday.getFullYear() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getDate() === yesterday.getDate()
+    ) {
+      return `Hôm qua · ${date.getHours().toString().padStart(2, "0")}:${date
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}`;
+    }
+
+    return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${date.getFullYear()} · ${date
+        .getHours()
+        .toString()
+        .padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+  };
+
+  const countTotalComments = (comments: any[] = []): number => {
+    return comments.reduce((sum, c) => {
+      const repliesCount = c.replies && c.replies.length > 0 ? countTotalComments(c.replies) : 0;
+      return sum + 1 + repliesCount;
+    }, 0);
+  };
+
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Feather name="arrow-left" size={22} color="#000" />
+          <Feather name="arrow-left" size={30} color="#000" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Khai phá dữ liệu - CO3029</Text>
+        <Text style={styles.headerTitle}>{`${forum_name} - ${course_code}`}</Text>
 
         <TouchableOpacity>
           <Feather name="more-horizontal" size={22} color="#000" />
@@ -30,35 +94,33 @@ const ForumDetailScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
-        {/* POST */}
         <View style={styles.postCard}>
-          {/* User row */}
           <View style={styles.userRow}>
-            <View style={styles.avatar} />
+            <Image
+              source={{
+                uri: discussionDetail?.data.user.avatar_url || "https://ui-avatars.com/api/?name=User"
+              }}
+              style={styles.avatar}
+            />
             <View style={{ flex: 1 }}>
-              <Text style={styles.username}>User name</Text>
-              <Text style={styles.time}>03:00, 28/11/2025</Text>
+              <Text style={styles.username}>{`${discussionDetail?.data.user.last_name} ${discussionDetail?.data.user.first_name}`}</Text>
+              <Text style={styles.time}>{formatPostTime(discussionDetail?.data.created_at as string)}</Text>
             </View>
           </View>
 
           {/* Title */}
-          <Text style={styles.postTitle}>Bài tập lớn 1</Text>
+          <Text style={styles.postTitle}>{discussionDetail?.data.title}</Text>
 
           {/* Content */}
           <Text style={styles.postContent}>
-            Deadline: 16/11/2025.{"\n"}
-            Presentation: 3 hoặc 4 tuần học cuối.{"\n"}
-            Chào cả lớp, về nội dung học qua LMS:{"\n"}
-            - File report, slides trình bày và giải thích kết quả.{"\n"}
-            - Source code đưa lên github và chèn link vào report trang bìa
-            (hoặc có thể nén).{"\n"}
-            - Video trình bày với sự tham gia của tất cả thành viên trong nhóm
-            (nếu không trình bày tại lớp), có thể đưa lên Youtube (đảm bảo video
-            có thể truy cập được), và đưa link vào report trang bìa.{"\n"}
-            Thời gian trình bày:{"\n"}
-            - Trên lớp: &lt; 15ph.{"\n"}
-            - Video: &lt; 20ph.
+            {discussionDetail?.data.content}
           </Text>
+
+          {discussionDetail?.data.media ?
+            <MediaGallery media={discussionDetail?.data.media} />
+            :
+            <></>
+          }
 
           {/* Actions */}
           <View style={styles.actionRow}>
@@ -77,28 +139,17 @@ const ForumDetailScreen = () => {
         </View>
 
         {/* COMMENT SECTION */}
-        <Text style={styles.commentTitle}>BÌNH LUẬN</Text>
 
-        <View style={styles.commentCard}>
-          <View style={styles.userRow}>
-            <View style={[styles.avatar, { backgroundColor: "#ff5252" }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.username}>User name</Text>
-              <Text style={styles.time}>30/11/2025</Text>
-            </View>
-          </View>
+        <Text style={styles.commentTitle}>
+          BÌNH LUẬN ({countTotalComments(discussionDetail?.data.comment)})
+        </Text>
 
-          <Text style={styles.commentText}>Bình luận bài viết</Text>
-
-          <View style={styles.commentActions}>
-            <Feather name="thumbs-up" size={16} />
-            <Text style={{ marginLeft: 4 }}>0</Text>
-
-            <Text style={{ marginLeft: 12, color: "#007ACC" }}>
-              2 câu trả lời
-            </Text>
-          </View>
-        </View>
+        {discussionDetail?.data.comment.map((comment) => (
+          <CommentItem
+            key={comment.comment_id}
+            comment={comment}
+          />
+        ))}
       </ScrollView>
 
       {/* INPUT COMMENT */}
@@ -127,7 +178,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   headerTitle: {
-    fontSize: 16,
+    width: 300,
+    textAlign: "center",
+    fontSize: 15,
     fontWeight: "600",
   },
   container: {
@@ -175,7 +228,7 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 20,
     justifyContent: "space-between",
   },
   actionItem: {
