@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.comment import Comment
+from app.services import information_services
 
 def create_comment(db: Session, user_id: str, discussion_id: str, content: str, parent_comment_id: str | None = None):
     comment = Comment(
@@ -25,6 +26,7 @@ def get_comments(db: Session, discussion_id: str):
     roots = []
 
     for c in comments:
+        c.user = information_services.get_user_info(db, c.user_id)
         c.replies = []
         comment_map[c.comment_id] = c
 

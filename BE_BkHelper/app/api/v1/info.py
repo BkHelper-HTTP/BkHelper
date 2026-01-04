@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException, Response, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from app.db.deps import get_db
 from app.services.information_services import InformationService
 from app.services import information_services
 from app.services.notification_services import HCMUTLMSService
+from app.core.security import get_current_user
 
 router = APIRouter()
 
@@ -42,11 +44,12 @@ def fetch_user_avatar(data: InfoRequest):
         raise HTTPException(status_code=400, detail=str(e))
     
 @router.post("/fetch-user-information")
-def fetch_user_information(data: InfoRequest):
+def fetch_user_information(data: InfoRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     """
     API trả thông tin chi tiết của user từ MyBK.
     Chỉ cần token MyBK, không trả avatar (avatar đã có API riêng).
     """
+    user = information_services.get_user_info(db=db, user_id=current_user["user_id"])
     try:
         if not data.token:
             raise HTTPException(status_code=400, detail="Token MyBK chưa được cung cấp.")
@@ -60,7 +63,8 @@ def fetch_user_information(data: InfoRequest):
         # Lấy thông tin chi tiết
         user_detail = info_service.get_mybk_user_detail(user_id)
 
-        return {"user_detail": user_detail}
+        return {"user_detail": user_detail,
+                "avatar_url": user.avatar_url}
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
