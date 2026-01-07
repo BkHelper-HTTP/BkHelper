@@ -121,7 +121,7 @@ export default function NotificationDetailScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f9fa", paddingHorizontal: 8 }}>
                 <SkeletonNotificationDetail />
             </SafeAreaView>
         );
@@ -136,7 +136,6 @@ export default function NotificationDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* HEADER CỐ ĐỊNH VỚI NÚT BACK */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={26} color="#fff" />
@@ -154,7 +153,6 @@ export default function NotificationDetailScreen() {
                 </View>
             </View>
 
-            {/* DANH SÁCH TIN NHẮN */}
             <ScrollView
                 contentContainerStyle={styles.messageList}
                 showsVerticalScrollIndicator={false}
@@ -196,7 +194,6 @@ const styles = StyleSheet.create({
         backgroundColor: "#f8f9fa",
     },
 
-    // HEADER ĐẸP VỚI NÚT BACK
     header: {
         flexDirection: "row",
         alignItems: "center",

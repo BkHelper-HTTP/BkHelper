@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
@@ -6,13 +6,14 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { useNavigation } from '@react-navigation/native';
 import { router } from "expo-router";
 import { APP_COLOR } from '@/utils/constant';
-import { logOutAPI } from '@/utils/api';
+import { getUserInfAPI, logOutAPI } from '@/utils/api';
 import { useCurrentApp } from '@/context/app.context';
 import Toast from 'react-native-root-toast';
 
 const AccountTab = () => {
     const navigation = useNavigation<any>();
     const { appState } = useCurrentApp()
+    const [user, setUser] = useState<IUserInformation | null>(null);
 
     const handleLogOut = async () => {
         if (appState && appState?.lms.sesskey, appState?.lms.cookies.JSESSIONID, appState?.lms.cookies.CASTGC, appState?.lms.cookies.SESSION, appState?.lms.cookies.MoodleSession, appState?.lms.cookies.MOODLEID1_) {
@@ -38,27 +39,55 @@ const AccountTab = () => {
         }
     }
 
+    useEffect(() => {
+        const fetchUser = async () => {
+            if (appState?.mybk?.token) {
+                const res = await getUserInfAPI(appState.mybk.token);
+                console.log("check res:", res)
+                if (res && res.user_detail) {
+                    setUser(res);
+                } else {
+                    Toast.show("Get user information failed", {
+                        duration: Toast.durations.LONG,
+                        textColor: "white",
+                        backgroundColor: "red",
+                        opacity: 1,
+                        position: Toast.positions.BOTTOM
+                    });
+                }
+            }
+        };
+        fetchUser();
+    }, []);
+
+    const fullName = `${user?.user_detail.data.lastName} ${user?.user_detail.data.firstName}`;
+
     return (
         <View style={styles.container}>
             {/* Avatar */}
             <View style={styles.avatarContainer}>
                 <Image
-                    source={{ uri: 'https://randomuser.me/api/portraits/men/1.jpg' }}
+                    source={{ uri: user?.avatar_url }}
                     style={styles.avatar}
+                    resizeMode="cover"         // hoặc "contain" tuỳ hiệu ứng mong muốn
+                    resizeMethod="resize"
                 />
                 <TouchableOpacity style={styles.editIcon}>
                     <Feather name="edit-2" size={14} color="#fff" />
                 </TouchableOpacity>
             </View>
 
-            <Text style={styles.name}>Albert Florest</Text>
-            <Text style={styles.role}>Student</Text>
+            <Text style={styles.name}>{fullName}</Text>
+            <Text style={styles.role}>{user?.user_detail.data.trainingLevel.nameVi}</Text>
 
             {/* Menu */}
             <View style={styles.menu}>
                 <TouchableOpacity
                     style={styles.menuItem}
-                    onPress={() => router.navigate("/account/view.profile.screen")}
+                    onPress={() => router.push({
+                        pathname: "/account/view.profile.screen",
+                        params: { user: JSON.stringify(user?.user_detail) },
+                    })}
                 >
                     <View style={styles.menuLeft}>
                         <FontAwesome5 name="user-edit" size={18} color={APP_COLOR.BLUE} />

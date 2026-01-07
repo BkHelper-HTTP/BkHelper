@@ -4,9 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
-import { getDiscussionAPI } from "@/utils/api";
+import { getDiscussionAPI, UpdateDiscussionAPI, DeleteDiscussionAPI, UploadImageAPI, DeleteImageAPI, CreateCommentAPI, ReplyCommentAPI, UpdateCommentAPI, DeleteCommentAPI } from "@/utils/api";
 import Toast from "react-native-root-toast";
 import MediaGallery from "./media.gallery";
+import * as ImagePicker from "expo-image-picker";
 import CommentItem from "./comment.item";
 
 
@@ -14,6 +15,11 @@ const ForumDetailScreen = () => {
   const navigation = useNavigation();
   const { discussion_id, forum_name, course_code } = useLocalSearchParams()
   const [discussionDetail, setDiscussionDetail] = useState<IGetDiscussionAPI | null>(null)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [commentText, setCommentText] = useState("");
 
 
   useEffect(() => {
@@ -77,6 +83,191 @@ const ForumDetailScreen = () => {
     }, 0);
   };
 
+  const saveEdit = async () => {
+    if (!discussion_id) return;
+    try {
+      setIsProcessing(true);
+      const forumId = discussionDetail?.data.forum_id;
+      if (!forumId) {
+        Toast.show('Không tìm thấy forum id', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+        setIsProcessing(false);
+        return;
+      }
+      const res = await UpdateDiscussionAPI(discussion_id as string, forumId as string, editTitle, editContent);
+      if (res && (res as any).status === "success") {
+        Toast.show('Cập nhật thành công', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'green', opacity: 1, position: Toast.positions.BOTTOM });
+        const refreshed = await getDiscussionAPI(discussion_id as string);
+        if (refreshed && refreshed.status === 'success') setDiscussionDetail(refreshed);
+        setIsEditing(false);
+      } else {
+        const msg = (res as any)?.message ?? 'Không thể cập nhật bài thảo luận';
+        Toast.show(msg, { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        Toast.show('Bạn không có quyền thực hiện thao tác này', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      } else {
+        Toast.show('Lỗi khi cập nhật', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const pickAndUploadImage = async () => {
+    if (!discussion_id) return;
+    try {
+      setIsProcessing(true);
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Toast.show('Cần quyền truy cập thư viện ảnh', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      if (result.canceled || !result.assets || result.assets.length === 0) return;
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const name = uri.split('/').pop() || `upload.jpg`;
+      const match = /\.(\w+)$/.exec(name);
+      const ext = match ? match[1].toLowerCase() : 'jpg';
+      const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+      const formData = new FormData();
+      formData.append('file', { uri: uri, name: name, type: mime } as any);
+
+      const res = await UploadImageAPI(formData, discussion_id as string);
+      if (res && (res as any).status === 'success') {
+        Toast.show('Upload ảnh thành công', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'green', opacity: 1, position: Toast.positions.BOTTOM });
+        const refreshed = await getDiscussionAPI(discussion_id as string);
+        if (refreshed && refreshed.status === 'success') setDiscussionDetail(refreshed);
+      } else {
+        const msg = (res as any)?.message ?? 'Không thể upload ảnh';
+        Toast.show(msg, { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      }
+    } catch (err: any) {
+      Toast.show('Lỗi khi upload ảnh', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteImage = async (media_id: string) => {
+    try {
+      setIsProcessing(true);
+      const res = await DeleteImageAPI(media_id);
+      // Backend may return 'deleted' or 'success'
+      const ok = res && ((res as any).status === 'deleted');
+      if (ok) {
+        // Optimistically remove the media from local state so UI updates immediately
+        setDiscussionDetail((prev) => {
+          if (!prev) return prev;
+          const newMedia = (prev.data.media || []).filter((m: any) => String(m.media_id) !== String(media_id));
+          return {
+            ...prev,
+            data: {
+              ...prev.data,
+              media: newMedia,
+            },
+          };
+        });
+
+        Toast.show('Xoá ảnh thành công', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'green', opacity: 1, position: Toast.positions.BOTTOM });
+        // refresh to ensure consistent state
+        const refreshed = await getDiscussionAPI(discussion_id as string);
+        if (refreshed && refreshed.status === 'success') setDiscussionDetail(refreshed);
+      } else {
+        const msg = (res as any)?.message ?? 'Không thể xoá ảnh';
+        Toast.show(msg, { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        Toast.show('Bạn không có quyền thực hiện thao tác này', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      } else {
+        Toast.show('Lỗi khi xoá ảnh', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const createComment = async () => {
+    if (!discussion_id) return;
+    if (!commentText.trim()) return Toast.show('Vui lòng nhập nội dung', { duration: Toast.durations.SHORT, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+    try {
+      setIsProcessing(true);
+      const res = await CreateCommentAPI(discussion_id as string, commentText.trim());
+      if (res && (res as any).status === 'success') {
+        Toast.show('Bình luận thành công', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'green', opacity: 1, position: Toast.positions.BOTTOM });
+        setCommentText("");
+        const refreshed = await getDiscussionAPI(discussion_id as string);
+        if (refreshed && refreshed.status === 'success') setDiscussionDetail(refreshed);
+      } else {
+        const msg = (res as any)?.message ?? 'Không thể bình luận';
+        Toast.show(msg, { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      }
+    } catch (err: any) {
+      Toast.show('Lỗi khi gửi bình luận', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const replyComment = async (parent_comment_id: string, content: string): Promise<boolean> => {
+    if (!discussion_id) return false;
+    if (!content.trim()) return false;
+    try {
+      setIsProcessing(true);
+      const res = await ReplyCommentAPI(discussion_id as string, content.trim(), parent_comment_id);
+      if (res && (res as any).status === 'success') {
+        const refreshed = await getDiscussionAPI(discussion_id as string);
+        if (refreshed && refreshed.status === 'success') setDiscussionDetail(refreshed);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const updateComment = async (comment_id: string, content: string): Promise<boolean> => {
+    if (!comment_id || !content.trim()) return false;
+    try {
+      setIsProcessing(true);
+      const res = await UpdateCommentAPI(comment_id, content.trim());
+      if (res && (res as any).status === 'success') {
+        const refreshed = await getDiscussionAPI(discussion_id as string);
+        if (refreshed && refreshed.status === 'success') setDiscussionDetail(refreshed);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const deleteComment = async (comment_id: string): Promise<boolean> => {
+    if (!comment_id) return false;
+    try {
+      setIsProcessing(true);
+      const res = await DeleteCommentAPI(comment_id);
+      if (res && (res as any).status === 'deleted') {
+        const refreshed = await getDiscussionAPI(discussion_id as string);
+        if (refreshed && refreshed.status === 'success') setDiscussionDetail(refreshed);
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        Toast.show('Bạn không có quyền thực hiện thao tác này', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+      }
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -88,8 +279,16 @@ const ForumDetailScreen = () => {
 
         <Text style={styles.headerTitle}>{`${forum_name} - ${course_code}`}</Text>
 
-        <TouchableOpacity>
-          <Feather name="more-horizontal" size={22} color="#000" />
+        <TouchableOpacity onPress={async () => {
+          if (isEditing) {
+            await saveEdit();
+          } else {
+            setIsEditing(true);
+            setEditTitle(discussionDetail?.data.title || "");
+            setEditContent(discussionDetail?.data.content || "");
+          }
+        }}>
+          <Feather name={isEditing ? "check" : "more-horizontal"} size={22} color="#000" />
         </TouchableOpacity>
       </View>
 
@@ -108,19 +307,50 @@ const ForumDetailScreen = () => {
             </View>
           </View>
 
-          {/* Title */}
-          <Text style={styles.postTitle}>{discussionDetail?.data.title}</Text>
+          {isEditing ? (
+            <>
+              <TextInput value={editTitle} onChangeText={setEditTitle} style={styles.editTitleInput} editable={!isProcessing} />
+              <TextInput value={editContent} onChangeText={setEditContent} style={styles.editContentInput} editable={!isProcessing} multiline />
 
-          {/* Content */}
-          <Text style={styles.postContent}>
-            {discussionDetail?.data.content}
-          </Text>
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                <TouchableOpacity onPress={pickAndUploadImage} disabled={isProcessing}>
+                  <Text style={{ color: '#007ACC' }}>Thêm ảnh</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => { setIsEditing(false); setEditTitle(discussionDetail?.data.title || ''); setEditContent(discussionDetail?.data.content || ''); }} disabled={isProcessing}>
+                  <Text style={{ color: '#777' }}>Huỷ</Text>
+                </TouchableOpacity>
+              </View>
 
-          {discussionDetail?.data.media ?
-            <MediaGallery media={discussionDetail?.data.media} />
-            :
-            <></>
-          }
+              {discussionDetail?.data.media && discussionDetail.data.media.length > 0 && (
+                <View style={styles.mediaRow}>
+                  {discussionDetail.data.media.map((m: any) => (
+                    <View key={m.media_id} style={{ position: 'relative', marginRight: 8 }}>
+                      <Image source={{ uri: m.image_url || m.url }} style={styles.mediaThumb} />
+                      <TouchableOpacity style={styles.deleteImageBtn} onPress={() => handleDeleteImage(m.media_id)}>
+                        <Feather name="x" size={16} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Title */}
+              <Text style={styles.postTitle}>{discussionDetail?.data.title}</Text>
+
+              {/* Content */}
+              <Text style={styles.postContent}>
+                {discussionDetail?.data.content}
+              </Text>
+
+              {discussionDetail?.data.media ?
+                <MediaGallery media={discussionDetail?.data.media} />
+                :
+                <></>
+              }
+            </>
+          )}
 
           {/* Actions */}
           <View style={styles.actionRow}>
@@ -144,10 +374,13 @@ const ForumDetailScreen = () => {
           BÌNH LUẬN ({countTotalComments(discussionDetail?.data.comment)})
         </Text>
 
-        {discussionDetail?.data.comment.map((comment) => (
+        {discussionDetail?.data.comment && discussionDetail.data.comment.map((comment) => (
           <CommentItem
             key={comment.comment_id}
             comment={comment}
+            onReply={replyComment}
+            onUpdate={updateComment}
+            onDelete={deleteComment}
           />
         ))}
       </ScrollView>
@@ -157,9 +390,12 @@ const ForumDetailScreen = () => {
         <TextInput
           placeholder="Viết bình luận..."
           style={styles.input}
+          value={commentText}
+          onChangeText={setCommentText}
+          editable={!isProcessing}
         />
-        <TouchableOpacity>
-          <Feather name="send" size={20} color="#007ACC" />
+        <TouchableOpacity onPress={createComment} disabled={isProcessing || !commentText.trim()}>
+          <Feather name="send" size={20} color={commentText.trim() ? "#007ACC" : "#ccc"} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -224,6 +460,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#333",
   },
+  editTitleInput: { borderWidth: 1, borderColor: '#eee', padding: 8, borderRadius: 6, marginTop: 8, fontWeight: '700' },
+  editContentInput: { borderWidth: 1, borderColor: '#eee', padding: 8, borderRadius: 6, marginTop: 8, height: 120, textAlignVertical: 'top' },
+  mediaRow: { flexDirection: 'row', marginTop: 8 },
+  mediaThumb: { width: 80, height: 80, borderRadius: 8 },
+  deleteImageBtn: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: 12 },
 
   actionRow: {
     flexDirection: "row",

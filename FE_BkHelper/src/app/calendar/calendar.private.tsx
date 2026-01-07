@@ -34,7 +34,11 @@ const getCurrentSemesterYear = (): string => {
         // Học kỳ 1 (giữa tháng 8 -> 12)
         semester = 1;
         yearStr = `${year}`;
-    } else if ([1, 2, 3, 4, 5].includes(month)) {
+    } else if ((month === 1 && day <= 15)) {
+        // Học kỳ 1 (giữa tháng 8 -> 12)
+        semester = 1;
+        yearStr = `${year - 1}`;
+    } else if ((month === 1 && day >= 15) || [2, 3, 4, 5].includes(month)) {
         // Học kỳ 2 (đầu năm nhưng của năm học trước)
         semester = 2;
         yearStr = `${year - 1}`;

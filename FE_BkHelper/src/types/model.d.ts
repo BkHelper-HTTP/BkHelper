@@ -295,7 +295,8 @@ declare global {
                 note: string
             },
             sign: string
-        }
+        },
+        avatar_url: string
     }
 
     interface ILogOutAPI {
@@ -412,4 +413,57 @@ declare global {
         created_at: string,
         updated_at: null
     }
+
+    interface IUploadMediaAPI {
+        status: string,
+        data: {
+            media_id: string,
+            image_url: string
+        }
+    }
+
+    interface IUpdateDiscussionAPI {
+        status: string,
+        data: {
+            forum_id: string,
+            user_id: string,
+            content: string,
+            updated_at: string,
+            deleted_at: string,
+            discussion_id: string,
+            title: string,
+            created_at: string,
+            is_deleted: boolean
+        }
+    }
+
+    interface IDeleteDiscussionAPI {
+        status: string
+    }
+
+    interface IDeleteImageAPI {
+        status: string
+    }
+
+    interface ICreateCommentAPI {
+        status: string,
+        data: {
+            parent_comment_id: string,
+            comment_id: string,
+            created_at: string,
+            discussion_id: string,
+            user_id: string,
+            content: string,
+            is_deleted: boolean
+        }
+    }
+
+    interface IUpdateCommentAPI {
+        status: string
+    }
+
+    interface IDeleteCommentAPI {
+        status: string
+    }
+
 }

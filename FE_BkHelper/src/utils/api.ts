@@ -91,10 +91,67 @@ export const getDiscussionAPI = (discussion_id: string) => {
 };
 
 export const CreateDiscussionAPI = (forum_id: string, title: string, content: string) => {
-    const url = `api/v1/discussion/create_discussion`;
+    const url = `/api/v1/discussion/create_discussion`;
     return instance.post<ICreateDiscusionAPI>(url, {
         forum_id: forum_id,
         title: title,
         content: content,
     });
+};
+
+export const UploadImageAPI = (formData: FormData, forum_id: string) => {
+    const url = `/api/v1/media/upload_media/${forum_id}`;
+    return instance.post<IUploadMediaAPI>(url, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};
+
+export const UpdateDiscussionAPI = (discussion_id: string, forum_id: string, title: string, content: string) => {
+    const url = `/api/v1/discussion/update_discussion/${discussion_id}`;
+    return instance.patch<IUpdateDiscussionAPI>(url, {
+        forum_id: forum_id,
+        title: title,
+        content: content,
+    });
+};
+
+export const DeleteDiscussionAPI = (discussion_id: string) => {
+    const url = `/api/v1/discussion/delete_discussion/${discussion_id}`;
+    return instance.delete<IDeleteDiscussionAPI>(url);
+};
+
+export const DeleteImageAPI = (media_id: string) => {
+    const url = `/api/v1/media/delete_media/${media_id}`;
+    return instance.delete<IDeleteImageAPI>(url);
+};
+
+export const CreateCommentAPI = (discussion_id: string, content: string) => {
+    const url = `/api/v1/comment/create_comment`;
+    return instance.post<ICreateCommentAPI>(url, {
+        discussion_id: discussion_id,
+        content: content,
+    });
+};
+
+export const ReplyCommentAPI = (discussion_id: string, content: string, parent_comment_id: string) => {
+    const url = `api/v1/comment/create_comment`;
+    return instance.post<ICreateCommentAPI>(url, {
+        discussion_id: discussion_id,
+        content: content,
+        parent_comment_id: parent_comment_id
+    });
+};
+
+export const UpdateCommentAPI = (comment_id: string, content: string) => {
+    const url = `/api/v1/comment/update_comment/${comment_id}`;
+    return instance.patch<IUpdateCommentAPI>(url, {
+        content: content,
+    });
+};
+
+export const DeleteCommentAPI = (comment_id: string) => {
+    const url = `/api/v1/comment/delete_comment/${comment_id}`;
+    return instance.delete<IDeleteCommentAPI>(url);
 };
