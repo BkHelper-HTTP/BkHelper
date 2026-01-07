@@ -42,6 +42,8 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         user_id = payload.get("user_id")
         student_code = payload.get("student_code")
         avatar_url = payload.get("avatar_url")
+        first_name = payload.get("first_name")
+        last_name = payload.get("last_name")
 
         if not user_id:
             raise HTTPException(
@@ -52,7 +54,9 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         return {
             "user_id": user_id,
             "student_code": student_code,
-            "avatar_url": avatar_url
+            "avatar_url": avatar_url,
+            "first_name": first_name,
+            "last_name": last_name
         }
 
     except JWTError:

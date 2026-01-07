@@ -23,6 +23,6 @@ def fetch_schedule(data: ScheduleRequest):
 
         schedule = service.get_full_schedule(semester_year)
         agenda_schedule = transform_schedule_to_agenda(schedule)
-        return {"status": "success", "data": schedule}
+        return {"status": "success", "data": agenda_schedule}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
