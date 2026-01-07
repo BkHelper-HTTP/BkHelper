@@ -63,7 +63,7 @@ def unified_login(data: LoginSchema, db=Depends(get_db)):
             avatar_url=image_bytes
         )
 
-        if is_new:
+        if True:
             service = HCMUTMyBKService(token=result["mybk"]["token"], cookies=result["mybk"]["cookies"])
             # semester_year = data.semester_year
             # if semester_year is None or semester_year.lower() == "null":

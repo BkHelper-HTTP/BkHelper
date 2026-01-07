@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, Integer
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.sql import func
 from .base import Base
@@ -16,5 +16,12 @@ class Course(Base):
     teacher_first_name = Column(String(100), nullable=False)
     teacher_last_name = Column(String(100), nullable=False)
     teacher_email = Column(String(255))
+    class_group = Column(String(10))
+    start_time = Column(String(10))
+    end_time = Column(String(10))
+    room_code = Column(String(10))
+    campus = Column(String(255))
+    num_of_credit = Column(Integer())
     semester = Column(String(10), nullable=False)
+    semester_name = Column(String(255))
     created_at = Column(DateTime(timezone=True), server_default=func.now())

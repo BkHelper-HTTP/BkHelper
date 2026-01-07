@@ -32,9 +32,9 @@ class HCMUTMyBKService:
         day = today.day
 
         # Quy tắc xác định học kỳ (1,2,3)
-        if (month == 8 and day >= 15) or (month in [9, 10, 11, 12]):
+        if (month == 8 and day >= 15) or (month in [1, 9, 10, 11, 12]):
             semester = 1
-            year_str = str(year)  # VD: 2025
+            year_str = str(year-1)  # VD: 2025
         elif month in [1, 2, 3, 4, 5]:
             semester = 2
             year_str = str(year - 1)  # vì học kỳ 2 thuộc năm trước (vd học kỳ 2 của năm 2025 là 20252)
