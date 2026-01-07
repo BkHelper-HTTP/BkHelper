@@ -5,6 +5,16 @@ import { Stack } from "expo-router";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RootSiblingParent } from 'react-native-root-siblings';
 import * as Sentry from 'sentry-expo';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from "react";
+
+SplashScreen.preventAutoHideAsync();
+
+useEffect(() => {
+  setTimeout(() => {
+    SplashScreen.hideAsync();
+  }, 2000);
+}, []);
 
 Sentry.init({
   dsn: "https://48cd84ef14e78358fd23d6a172b8da29@o4510499653419008.ingest.us.sentry.io/4510502713491456",
@@ -13,6 +23,7 @@ Sentry.init({
 });
 
 const RootLayout = () => {
+
   const navTheme = {
     ...DefaultTheme,
     colors: {
@@ -20,8 +31,6 @@ const RootLayout = () => {
       background: 'transparent'
     },
   };
-
-  // Sentry.Native.captureException(new Error("Test error by student"));
 
   return (
     <GestureHandlerRootView >

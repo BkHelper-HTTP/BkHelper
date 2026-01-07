@@ -1,14 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  Image,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -159,7 +151,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
 
-  /* Header */
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -172,7 +163,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  /* Message */
   messageRow: {
     flexDirection: "row",
     marginVertical: 6,
