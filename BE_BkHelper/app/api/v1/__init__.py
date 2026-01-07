@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from . import auth, info, schedule, forum, notification, discussion, comment, media, course
+from . import auth, info, schedule, forum, notification, discussion, comment, media, course, map
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
@@ -11,3 +11,4 @@ api_router.include_router(notification.router, prefix="/notifications", tags=["N
 api_router.include_router(discussion.router, prefix="/discussion", tags=["Discussion"])
 api_router.include_router(comment.router, prefix="/comment", tags=["Comment"])
 api_router.include_router(media.router, prefix="/media", tags=["Media"])
+api_router.include_router(map.router, prefix="/map", tags="Map")
