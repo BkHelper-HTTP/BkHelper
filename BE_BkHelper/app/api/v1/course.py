@@ -13,7 +13,6 @@ def get_my_courses(
     current_user=Depends(get_current_user)
 ):
     courses = course_services.get_my_courses(db=db, user_id=current_user["user_id"])
-    print("caocao", current_user["student_code"])
     return {
         "status": "success",
         "data": courses

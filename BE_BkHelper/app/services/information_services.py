@@ -42,12 +42,12 @@ class InformationService:
             "Cookie": f"MoodleSession={self.cookies.get('MoodleSession')}; MOODLEID1_={self.cookies.get('MOODLEID1_')}"
         }
 
-        # 1️⃣ GET trang chủ LMS (đã đăng nhập)
+        # 1️ GET trang chủ LMS (đã đăng nhập)
         res = self.session.get(self.LMS_BASE_URL, headers=headers)
         if res.status_code != 200:
             raise Exception(f"Không thể truy cập LMS ({res.status_code})")
 
-        # 2️⃣ Dùng BeautifulSoup để tìm link ảnh <img class="userpicture" ...>
+        # 2️ Dùng BeautifulSoup để tìm link ảnh <img class="userpicture" ...>
         soup = BeautifulSoup(res.text, "html.parser")
         img_tag = soup.find("img", {"class": "userpicture"})
 
@@ -56,14 +56,14 @@ class InformationService:
 
         image_url = img_tag["src"]
 
-        # 3️⃣ GET ảnh thực tế (bảo vệ bằng cookie)
+        # 3️ GET ảnh thực tế (bảo vệ bằng cookie)
         img_res = self.session.get(image_url, headers=headers)
         if img_res.status_code != 200:
             raise Exception(f"Tải ảnh thất bại: HTTP {img_res.status_code}")
 
         image_bytes = img_res.content
 
-        # 4️⃣ (Tùy chọn) Lưu file nếu được yêu cầu
+        # 4️ (Tùy chọn) Lưu file nếu được yêu cầu
         saved_to = None
         if save_path:
             with open(save_path, "wb") as f:
