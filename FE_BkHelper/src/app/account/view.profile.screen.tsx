@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { APP_COLOR } from "@/utils/constant";
 import { getUserInfAPI } from "@/utils/api";
 import { useCurrentApp } from "@/context/app.context";
@@ -11,9 +12,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const UserDetailScreen = () => {
     const navigation = useNavigation();
     const { appState } = useCurrentApp();
-    const [user, setUser] = useState<any>(null);
+    const { user: userParam } = useLocalSearchParams();
+    const router = useRouter();
+    const initialUser = userParam ? JSON.parse(userParam as string) : null;
+    const [user, setUser] = useState<any>(initialUser);
 
     useEffect(() => {
+        if (initialUser) {
+            setUser(initialUser);
+            return;
+        }
         const fetchUser = async () => {
             if (appState?.mybk?.token) {
                 const res = await getUserInfAPI(appState.mybk.token);
@@ -30,8 +38,8 @@ const UserDetailScreen = () => {
                 }
             }
         };
-        fetchUser();
-    }, []);
+        if (appState?.mybk?.token) fetchUser();
+    }, [appState?.mybk?.token, userParam]);
 
     const InfoRow = ({ icon, label, value }: any) => {
         if (!value) return null;
@@ -56,7 +64,7 @@ const UserDetailScreen = () => {
 
     if (!user) return null;
 
-    const fullName = `${user.lastName} ${user.firstName}`;
+    const fullName = `${user?.data.lastName} ${user?.data.firstName}`;
     const gender = user.isFemale ? "Female" : "Male";
 
     return (
@@ -64,7 +72,7 @@ const UserDetailScreen = () => {
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <TouchableOpacity onPress={() => router.back()}>
                         <Feather name="arrow-left" size={25} color="#000" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>User Information</Text>
@@ -73,30 +81,30 @@ const UserDetailScreen = () => {
 
                 <InfoCard title="Personal Information">
                     <InfoRow icon="user" label="Full Name" value={fullName} />
-                    <InfoRow icon="hash" label="Student Code" value={user.code} />
-                    <InfoRow icon="calendar" label="Date of Birth" value={user.dateOfBirth} />
+                    <InfoRow icon="hash" label="Student Code" value={user?.data.code} />
+                    <InfoRow icon="calendar" label="Date of Birth" value={user?.data.dateOfBirth} />
                     <InfoRow icon="users" label="Gender" value={gender} />
-                    <InfoRow icon="credit-card" label="ID Card" value={user.idCardNumber} />
+                    <InfoRow icon="credit-card" label="ID Card" value={user?.data.idCardNumber} />
                 </InfoCard>
 
                 <InfoCard title="Contact Information">
-                    <InfoRow icon="phone" label="Phone Number" value={user.phoneNumber} />
-                    <InfoRow icon="mail" label="Personal Email" value={user.personalEmail} />
-                    <InfoRow icon="mail" label="Organization Email" value={user.orgEmail} />
+                    <InfoRow icon="phone" label="Phone Number" value={user?.data.phoneNumber} />
+                    <InfoRow icon="mail" label="Personal Email" value={user?.data.personalEmail} />
+                    <InfoRow icon="mail" label="Organization Email" value={user?.data.orgEmail} />
                 </InfoCard>
 
                 <InfoCard title="Academic Information">
-                    <InfoRow icon="book" label="Faculty" value={user.teachingDep?.nameVi} />
-                    <InfoRow icon="award" label="Major" value={user.major?.nameVi} />
-                    <InfoRow icon="layers" label="Class Code" value={user.classCode} />
-                    <InfoRow icon="briefcase" label="Training Level" value={user.trainingLevel?.nameVi} />
+                    <InfoRow icon="book" label="Faculty" value={user?.data.teachingDep?.nameVi} />
+                    <InfoRow icon="award" label="Major" value={user?.data.major?.nameVi} />
+                    <InfoRow icon="layers" label="Class Code" value={user?.data.classCode} />
+                    <InfoRow icon="briefcase" label="Training Level" value={user?.data.trainingLevel?.nameVi} />
                 </InfoCard>
 
                 <InfoCard title="Study Status">
-                    <InfoRow icon="calendar" label="Start Year" value={user.startYear} />
-                    <InfoRow icon="clock" label="Graduation Time" value={user.graduationTime} />
-                    <InfoRow icon="activity" label="Status" value={user.status?.name} />
-                    <InfoRow icon="map-pin" label="Campus" value={user.campus?.nameVi} />
+                    <InfoRow icon="calendar" label="Start Year" value={user?.data.startYear} />
+                    <InfoRow icon="clock" label="Graduation Time" value={user?.data.graduationTime} />
+                    <InfoRow icon="activity" label="Status" value={user?.data.status?.name} />
+                    <InfoRow icon="map-pin" label="Campus" value={user?.data.campus?.nameVi} />
                 </InfoCard>
             </ScrollView>
         </SafeAreaView>

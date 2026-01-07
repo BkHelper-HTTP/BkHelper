@@ -1,34 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Image } from "react-native";
+import React, { useState } from "react";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Image, Modal, ActivityIndicator, TouchableWithoutFeedback } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, AntDesign, Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { router } from "expo-router";
-import { getListDiscussionAPI } from "@/utils/api";
+import { getListDiscussionAPI, UpdateDiscussionAPI, DeleteDiscussionAPI } from "@/utils/api";
 import Toast from "react-native-root-toast";
-
-const mockPosts = [
-    {
-        id: "1",
-        user: "User name 1",
-        time: "03:00, 28/11/2025",
-        title: "Về ForEach statement",
-        content:
-            "Dạ thưa thầy, theo như trong yêu cầu của đề bài, kích thước (dimension) của một Array literal được định nghĩa là một số nguyên hoặc một mảng số...",
-        likes: 28,
-        comments: 15,
-    },
-    {
-        id: "2",
-        user: "User name",
-        time: "03:00, 28/11/2025",
-        title: "Bài tập lớn 1",
-        content: "Nội dung bài tập lớn 1",
-        likes: 28,
-        comments: 15,
-    },
-];
 
 const ForumViewScreen = () => {
     const navigation = useNavigation();
@@ -37,24 +15,39 @@ const ForumViewScreen = () => {
     const [activeTab, setActiveTab] = useState("all");
     const { forum_id, forum_name, course_code } = useLocalSearchParams()
     const [discussions, setDiscussions] = useState<DiscussionItem[]>([])
+    const [editingDiscussion, setEditingDiscussion] = useState<DiscussionItem | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editContent, setEditContent] = useState("");
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    useEffect(() => {
-        const fetchListDiscussion = async () => {
-            const res = await getListDiscussionAPI(forum_id as string)
-            if (res && res.status === "success") {
-                setDiscussions(res.data)
-            } else {
-                Toast.show("Get discussions failed", {
-                    duration: Toast.durations.LONG,
-                    textColor: "white",
-                    backgroundColor: "red",
-                    opacity: 1,
-                    position: Toast.positions.BOTTOM
-                });
-            }
-        }
-        fetchListDiscussion()
-    }, [])
+    // New UI states for consistent actions
+    const [actionModalVisible, setActionModalVisible] = useState(false);
+    const [actionTarget, setActionTarget] = useState<DiscussionItem | null>(null);
+    const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            let isActive = true;
+            const fetchListDiscussion = async () => {
+                const res = await getListDiscussionAPI(forum_id as string);
+                if (!isActive) return;
+                if (res && res.status === "success") {
+                    setDiscussions(res.data);
+                } else {
+                    Toast.show("Get discussions failed", {
+                        duration: Toast.durations.LONG,
+                        textColor: "white",
+                        backgroundColor: "red",
+                        opacity: 1,
+                        position: Toast.positions.BOTTOM
+                    });
+                }
+            };
+            fetchListDiscussion();
+            return () => { isActive = false; };
+        }, [forum_id])
+    );
 
     const formatPostTime = (iso: string) => {
         if (!iso) return "";
@@ -93,6 +86,89 @@ const ForumViewScreen = () => {
     };
 
 
+    const handleAction = (item: DiscussionItem) => {
+        // open our custom bottom modal
+        setActionTarget(item);
+        setActionModalVisible(true);
+    };
+
+    const onPressEditFromAction = (item: DiscussionItem) => {
+        setActionModalVisible(false);
+        openEditModal(item);
+    };
+
+    const onPressDeleteFromAction = (item: DiscussionItem) => {
+        setActionModalVisible(false);
+        setActionTarget(item);
+        setDeleteConfirmVisible(true);
+    };
+
+    const confirmDelete = (item: DiscussionItem) => {
+        setActionTarget(item);
+        setDeleteConfirmVisible(true);
+    };
+
+    const deleteDiscussion = async (discussion_id: string) => {
+        try {
+            setIsProcessing(true);
+            const res = await DeleteDiscussionAPI(discussion_id);
+            if (res && (res as any).status === 'success') {
+                setDiscussions((prev) => prev.filter((d) => d.discussion_id !== discussion_id));
+                Toast.show('Xoá thành công', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'green', opacity: 1, position: Toast.positions.BOTTOM });
+            } else {
+                const msg = (res as any)?.message ?? 'Không thể xoá bài thảo luận';
+                Toast.show(msg, { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+            }
+        } catch (err: any) {
+            if (err?.response?.status === 403) {
+                Toast.show('Bạn không có quyền thực hiện thao tác này', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+            } else {
+                Toast.show('Lỗi khi xoá bài', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+            }
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const openEditModal = (item: DiscussionItem) => {
+        setEditingDiscussion(item);
+        setEditTitle(item.title);
+        setEditContent(item.content);
+        setEditModalVisible(true);
+    };
+
+    const saveEdit = async () => {
+        if (!editingDiscussion) return;
+        try {
+            setIsProcessing(true);
+            const forumId = editingDiscussion.forum_id;
+            const res = await UpdateDiscussionAPI(editingDiscussion.discussion_id, forumId, editTitle, editContent);
+            if (res && res.status === 'success') {
+                setDiscussions((prev) => prev.map((d) => d.discussion_id === editingDiscussion.discussion_id ? { ...d, title: editTitle, content: editContent } : d));
+                setDiscussionDetailIfOpen(editingDiscussion.discussion_id, editTitle, editContent);
+                setEditModalVisible(false);
+                Toast.show('Cập nhật thành công', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'green', opacity: 1, position: Toast.positions.BOTTOM });
+            } else {
+                const msg = (res as any)?.message ?? 'Không thể cập nhật bài thảo luận';
+                Toast.show(msg, { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+            }
+        } catch (err: any) {
+            if (err?.response?.status === 403) {
+                Toast.show('Bạn không có quyền thực hiện thao tác này', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+            } else {
+                console.log("check", err)
+                Toast.show('Lỗi khi cập nhật', { duration: Toast.durations.LONG, textColor: 'white', backgroundColor: 'red', opacity: 1, position: Toast.positions.BOTTOM });
+            }
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const setDiscussionDetailIfOpen = (discussion_id: string, title: string, content: string) => {
+        // If user is currently viewing detail of this discussion, update local detail cache if exists
+        // (forum view screen doesn't have detail state, but we keep this hook for future syncs)
+    };
+
     const renderPost = ({ item }: { item: DiscussionItem }) => (
         <TouchableOpacity
             onPress={() => router.push({
@@ -101,6 +177,9 @@ const ForumViewScreen = () => {
             })}
         >
             <View style={styles.postCard}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => handleAction(item)}>
+                    <Feather name="more-horizontal" size={18} color="#666" />
+                </TouchableOpacity>
                 {/* Header */}
                 <View style={styles.postHeader}>
                     <Image
@@ -204,11 +283,81 @@ const ForumViewScreen = () => {
                     style={styles.fab}
                     onPress={() => router.push({
                         pathname: "/forum/forum.add.screen",
-                        params: { forum_name: forum_name, course_code: course_code }
+                        params: { forum_id: forum_id, forum_name: forum_name, course_code: course_code }
                     })}
                 >
                     <Feather name="edit-2" size={22} color="#fff" />
                 </TouchableOpacity>
+
+                {/* ACTION MODAL (bottom sheet style) */}
+                <Modal visible={actionModalVisible} transparent animationType="slide" onRequestClose={() => setActionModalVisible(false)}>
+                    <TouchableWithoutFeedback onPress={() => setActionModalVisible(false)}>
+                        <View style={styles.actionBackdrop} />
+                    </TouchableWithoutFeedback>
+                    <View style={styles.actionSheet}>
+                        <TouchableOpacity style={styles.actionOptionRow} onPress={() => actionTarget && onPressEditFromAction(actionTarget)}>
+                            <Feather name="edit-2" size={18} color="#333" />
+                            <Text style={styles.actionOptionText}>Chỉnh sửa</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.actionOptionRow} onPress={() => actionTarget && onPressDeleteFromAction(actionTarget)}>
+                            <Feather name="trash-2" size={18} color="#e53935" />
+                            <Text style={[styles.actionOptionText, { color: '#e53935' }]}>Xoá</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.actionOptionRow, { justifyContent: 'center' }]} onPress={() => setActionModalVisible(false)}>
+                            <Text style={{ color: '#777' }}>Huỷ</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
+
+                {/* DELETE CONFIRM */}
+                <Modal visible={deleteConfirmVisible} transparent animationType="fade" onRequestClose={() => setDeleteConfirmVisible(false)}>
+                    <TouchableWithoutFeedback onPress={() => setDeleteConfirmVisible(false)}>
+                        <View style={styles.actionBackdrop} />
+                    </TouchableWithoutFeedback>
+                    <View style={styles.modalContainer}>
+                        <View style={[styles.modalContent, { width: '90%' }]}>
+                            <Text style={{ fontWeight: '700', marginBottom: 8 }}>Xác nhận xoá</Text>
+                            <Text style={{ color: '#444', marginBottom: 16 }}>Bạn có chắc muốn xoá bài thảo luận này? Hành động này có thể không khôi phục được.</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                                <TouchableOpacity onPress={() => setDeleteConfirmVisible(false)} disabled={isProcessing}>
+                                    <Text style={{ color: '#777' }}>Huỷ</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={async () => {
+                                    if (!actionTarget) return;
+                                    await deleteDiscussion(actionTarget.discussion_id);
+                                    setDeleteConfirmVisible(false);
+                                }} disabled={isProcessing}>
+                                    {isProcessing ? <ActivityIndicator /> : <Text style={{ color: '#e53935', fontWeight: '700' }}>Xoá</Text>}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* EDIT MODAL */}
+                <Modal
+                    visible={editModalVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setEditModalVisible(false)}
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalContent}>
+                            <Text style={{ fontWeight: '700', marginBottom: 8 }}>Chỉnh sửa bài thảo luận</Text>
+                            <TextInput value={editTitle} onChangeText={setEditTitle} style={styles.modalInput} editable={!isProcessing} />
+                            <TextInput value={editContent} onChangeText={setEditContent} style={[styles.modalInput, { height: 120 }]} multiline editable={!isProcessing} />
+                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                                <TouchableOpacity onPress={() => setEditModalVisible(false)} disabled={isProcessing}>
+                                    <Text style={{ color: '#777' }}>Huỷ</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={saveEdit} disabled={isProcessing}>
+                                    {isProcessing ? <ActivityIndicator /> : <Text style={{ color: '#007ACC', fontWeight: '600' }}>Lưu</Text>}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
             </View>
         </SafeAreaView>
     );
@@ -273,6 +422,36 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 6,
+    },
+    moreBtn: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        zIndex: 5,
+        padding: 6,
+    },
+    actionBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+    actionSheet: { backgroundColor: '#fff', paddingVertical: 8, borderTopLeftRadius: 12, borderTopRightRadius: 12, paddingHorizontal: 12 },
+    actionOptionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, gap: 12 },
+    actionOptionText: { marginLeft: 8, fontSize: 16, color: '#333' },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '90%',
+        backgroundColor: '#fff',
+        padding: 16,
+        borderRadius: 8,
+    },
+    modalInput: {
+        borderWidth: 1,
+        borderColor: '#eee',
+        padding: 8,
+        borderRadius: 6,
+        marginBottom: 8,
     },
     avatar: {
         width: 40,
