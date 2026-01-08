@@ -23,7 +23,6 @@ def create_access_token(data: dict):
         JWT_SECRET_KEY,
         algorithm=JWT_ALGORITHM
     )
-    print("caocao", JWT_SECRET_KEY)
     return encoded_jwt
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
