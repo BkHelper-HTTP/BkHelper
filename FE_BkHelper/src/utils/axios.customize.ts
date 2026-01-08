@@ -10,7 +10,7 @@ const backend =
 
 // Chat backend URL: prefer a dedicated env var, then fall back to the API backend.
 // On Android emulator, `localhost` refers to the emulator itself, so use 10.0.2.2 as fallback.
-const chatBackend = process.env.EXPO_PUBLIC_CHAT_URL ?? backend ?? (Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000");
+const chatBackend = process.env.EXPO_PUBLIC_CHAT_URL;
 
 const instance = axios.create({
     baseURL: backend,

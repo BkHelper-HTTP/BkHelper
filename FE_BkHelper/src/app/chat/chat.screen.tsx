@@ -6,27 +6,37 @@ import { Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { io, Socket } from "socket.io-client";
 import { JoinRoomAPI, getChatMessagesAPI } from "@/utils/api";
-import { instanceChat } from "@/utils/axios.customize";
+import { APP_COLOR } from "@/utils/constant";
 
 interface Message {
   id: string;
   text: string;
   sender: "me" | "other";
   time: string;
+  senderId?: string;
+  avatarUrl?: string | null;
 }
+
 
 export default function ChatScreen() {
   const { classId, className } = useLocalSearchParams();
   const navigation = useNavigation();
+
+  // current user state (populated from JoinRoomAPI)
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const currentUserIdRef = useRef<string>("");
+  const [currentUserName, setCurrentUserName] = useState<string>("");
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [status, setStatus] = useState<string>("disconnected");
   const [joinedRoom, setJoinedRoom] = useState<string | null>(null);
 
+  const [myAvatar, setMyAvatar] = useState<string | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+
   const socketRef = useRef<Socket | null>(null);
 
-  // Helper to format epoch -> hh:mm AM/PM
   const formatTime = (epochSeconds?: number) => {
     if (!epochSeconds) return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const d = new Date(epochSeconds * 1000);
@@ -34,12 +44,10 @@ export default function ChatScreen() {
   }
 
   useEffect(() => {
-    // Use base URL from axios instance so we don't hardcode `localhost` (helps when testing on device/emulator)
-    const baseURL = (instanceChat && instanceChat.defaults && instanceChat.defaults.baseURL) ? instanceChat.defaults.baseURL : 'http://localhost:3000';
+    const baseURL = process.env.EXPO_PUBLIC_CHAT_URL;
 
     const socket = io(baseURL, {
       transports: ['websocket'],
-      // If your server requires a custom path or auth, add here (e.g. path: '/ws')
       autoConnect: true,
     });
 
@@ -47,29 +55,37 @@ export default function ChatScreen() {
 
     socket.on('connect', () => {
       setStatus('connected');
-      console.log('socket connected', socket.id);
     });
 
     socket.on('disconnect', () => {
       setStatus('disconnected');
-      console.log('socket disconnected');
     });
 
-    // `newMessage` event from server
-    socket.on('newMessage', (data: any) => {
-      // Normalize incoming message to Message
+    socket.on("newMessage", (data: any) => {
+      const senderId = data.senderId ?? data.sender?.id ?? "";
+      const avatarUrl = data.sender?.avatarUrl ?? data.avatarUrl ?? null;
       const msg: Message = {
-        id: String(data.id ?? Date.now()),
-        text: data.text ?? data.content ?? JSON.stringify(data),
-        sender: 'other',
-        time: formatTime(data.timecreated ?? data.timestamp),
+        id: String(data.id ?? data._id ?? Date.now()),
+        text: data.content,
+        sender: (senderId === currentUserIdRef.current || senderId === "me") ? "me" : "other",
+        senderId,
+        avatarUrl,
+        time: formatTime(
+          data.createdAt
+            ? new Date(data.createdAt).getTime() / 1000
+            : undefined
+        ),
       };
-      setMessages(prev => [...prev, msg]);
+
+      setMessages((prev) => {
+        const exists = prev.some(p => p.id === msg.id || (msg.sender === 'me' && p.sender === 'me' && p.text === msg.text));
+        if (exists) return prev;
+        return [...prev, msg];
+      });
     });
 
     socket.on('connect_error', (err: any) => {
       setStatus('error');
-      console.warn('connect_error', err);
       Alert.alert('WebSocket connect error', err?.message ?? JSON.stringify(err));
     });
 
@@ -80,78 +96,97 @@ export default function ChatScreen() {
   }, []);
 
   const joinRoom = async (classId?: string, className?: string) => {
-    const cid = classId;
-    if (!cid) return Alert.alert('Missing class id');
+    if (!classId) return;
 
     try {
-      // Call API to create or get the room
       const res = await JoinRoomAPI(classId, className!);
-      // try to read room id from response (different backends use different fields)
-      const roomId = res?.id;
+      console.log('>>> JoinRoomAPI res:', res);
+      const roomId = res.roomId;
 
-      // emit joinRoom via socket
+      try {
+        const userFromRes = res?.user;
+        if (userFromRes) {
+          const userId = userFromRes.id;
+          const userName = userFromRes.name;
+          const avatar = userFromRes.avatarUrl ?? null;
+
+          setCurrentUserId(userId);
+          currentUserIdRef.current = userId;
+          setCurrentUserName(userName);
+          setMyAvatar(avatar);
+        }
+      } catch (e) { /* ignore */ }
+
       const socket = socketRef.current;
-      if (!socket) return Alert.alert('Socket not ready');
+      if (!socket) return;
 
-      socket.emit('joinRoom', roomId);
+      // 1️⃣ Join socket room
+      socket.emit("joinRoom", roomId);
       setJoinedRoom(roomId);
 
-      // fetch history messages
-      const hist = await getChatMessagesAPI(String(cid));
-      const arr = hist;
+      // 2️⃣ Fetch history bằng ROOM ID (KHÔNG phải classId)
+      const hist = await getChatMessagesAPI(roomId);
+      console.log('>>> getChatMessagesAPI hist:', hist);
 
-      // map backend messages to UI messages
-      const mapped: Message[] = (Array.isArray(arr) ? arr : []).map((m: any) => ({
-        id: String(m.id ?? m._id ?? Date.now()),
-        text: m.text ?? m.content ?? '',
-        sender: 'other',
-        time: formatTime(m.timecreated ?? m.timestamp),
-      }));
+      const safeTime = (x: any) => {
+        const t = x ? new Date(x).getTime() : 0;
+        return isNaN(t) ? 0 : t;
+      };
+
+      // sort history so oldest messages come first, newest last (so newest appears at the bottom)
+      const ordered = (hist ?? []).slice().sort((a: any, b: any) => safeTime(a.createdAt) - safeTime(b.createdAt));
+
+      const mapped: Message[] = ordered.map((m: any) => {
+        const senderId = m.senderId ?? m.sender?.id ?? "";
+        const avatarUrl = m.sender?.avatarUrl ?? m.avatarUrl ?? null;
+        const isMe = senderId === currentUserIdRef.current;
+
+        return {
+          id: String(m.id ?? m._id),
+          text: m.content,
+          sender: isMe ? "me" : "other",
+          senderId,
+          avatarUrl,
+          time: formatTime(
+            m.createdAt
+              ? new Date(m.createdAt).getTime() / 1000
+              : undefined
+          ),
+        } as Message;
+      });
 
       setMessages(mapped);
-
     } catch (err: any) {
-      console.error('joinRoom error', err);
-      let message = err?.message ?? 'Unknown error';
-      if (err?.response) {
-        message = `Request failed: ${err.response.status} ${JSON.stringify(err.response.data)}`;
-      } else if (err?.request) {
-        message = 'No response from server (network error / CORS) — check server URL and your device network';
-      }
-      Alert.alert('Failed to join room', message);
+      Alert.alert("Join room failed", err?.message ?? "Unknown error");
     }
-  }
+  };
 
   const sendMessage = () => {
-    if (!text.trim()) return;
-    const socket = socketRef.current;
-    if (!socket) return Alert.alert('Socket not connected');
-    if (!joinedRoom) return Alert.alert('You must join a room first');
+    if (!text.trim() || !joinedRoom || !currentUserId) return;
 
-    // You should pass real senderId and senderName from auth/user context
-    const payload = {
-      roomId: joinedRoom,
-      senderId: 'me',
-      senderName: 'Me',
-      msgType: 'text',
-      content: text,
+    const content = text.trim();
+
+    // optimistic UI: append locally
+    const optimisticMsg: Message = {
+      id: String(Date.now()),
+      text: content,
+      sender: "me",
+      senderId: currentUserId,
+      avatarUrl: myAvatar ?? null,
+      time: formatTime(),
     };
+    setMessages((prev) => [...prev, optimisticMsg]);
 
-    socket.emit('sendMessage', payload);
+    socketRef.current?.emit("sendMessage", {
+      roomId: joinedRoom,
+      senderId: currentUserId,
+      senderName: currentUserName || "me",
+      msgType: 'text',
+      content: content,
+    });
 
-    // append locally
-    setMessages(prev => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        text,
-        sender: 'me',
-        time: formatTime(),
-      }
-    ]);
-
-    setText('');
-  }
+    setText("");
+  };
 
   const renderItem = ({ item }: { item: Message }) => {
     const isMe = item.sender === "me";
@@ -165,7 +200,7 @@ export default function ChatScreen() {
       >
         {!isMe && (
           <Image
-            source={{ uri: "https://i.pravatar.cc/40" }}
+            source={item.avatarUrl ? { uri: item.avatarUrl } : { uri: "https://i.pravatar.cc/40" }}
             style={styles.avatar}
           />
         )}
@@ -176,12 +211,26 @@ export default function ChatScreen() {
             isMe ? styles.myBubble : styles.otherBubble,
           ]}
         >
-          <Text style={styles.messageText}>{item.text}</Text>
-          <Text style={styles.timeText}>{item.time}</Text>
+          <Text style={isMe ? styles.messageText : styles.messageTextOther}>{item.text}</Text>
+          <Text style={isMe ? styles.timeText : styles.timeTextOther}>{item.time}</Text>
         </View>
       </View>
     );
   };
+
+  useEffect(() => {
+    if (status === "connected" && classId) {
+      joinRoom(String(classId), String(className));
+    }
+  }, [status]);
+
+  // when messages change, scroll to bottom to show the latest message
+  useEffect(() => {
+    try {
+      // FlatList doesn't type narrow scrollToEnd, so use any
+      (flatListRef.current as any)?.scrollToEnd?.({ animated: true });
+    } catch (e) { /* ignore */ }
+  }, [messages]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -192,27 +241,24 @@ export default function ChatScreen() {
             <Feather name="arrow-left" size={22} color="#000" />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>{className ?? "CO3005 - L05"}</Text>
-
-          <View style={{ width: 22 }} />
-        </View>
-
-        <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-          <Text>Status: {status} {joinedRoom ? `· Room: ${joinedRoom}` : ''}</Text>
-
-          <View style={{ flexDirection: 'row', marginTop: 8 }}>
-            <TouchableOpacity onPress={() => joinRoom(String(classId ?? ''), String(className ?? ''))} style={{ marginRight: 8 }}>
-              <Text style={{ color: '#00A884' }}>Join Room</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => { setMessages([]); }}>
-              <Text style={{ color: '#666' }}>Clear</Text>
-            </TouchableOpacity>
+          <View style={{ flex: 1, alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
+            <Text style={styles.headerTitle}>
+              {className}
+            </Text>
+            <View
+              style={[
+                styles.statusDot,
+                status === "connected" ? styles.online : styles.offline,
+              ]}
+            />
           </View>
+
+          <View style={{ width: "auto" }} />
         </View>
 
         {/* Chat */}
         <FlatList
+          ref={flatListRef}
           data={messages}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
@@ -229,16 +275,8 @@ export default function ChatScreen() {
             onChangeText={setText}
           />
 
-          <TouchableOpacity>
-            <Feather name="camera" size={22} color="#666" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={{ marginHorizontal: 8 }}>
-            <Feather name="mic" size={22} color="#666" />
-          </TouchableOpacity>
-
           <TouchableOpacity onPress={sendMessage}>
-            <Feather name="send" size={22} color="#00A884" />
+            <Feather name="send" size={22} color={APP_COLOR.BLUE} />
           </TouchableOpacity>
         </View>
       </View>
@@ -290,17 +328,25 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   messageText: {
-    color: "#000",
+    color: "#ffffff",
+    fontSize: 14,
+  },
+  messageTextOther: {
+    color: "#000000",
     fontSize: 14,
   },
   timeText: {
     fontSize: 10,
-    color: "#666",
+    color: "#ffffff",
     marginTop: 4,
     alignSelf: "flex-end",
   },
-
-  /* Input */
+  timeTextOther: {
+    fontSize: 10,
+    color: "#000000",
+    marginTop: 4,
+    alignSelf: "flex-end",
+  },
   inputBar: {
     position: "absolute",
     bottom: 0,
@@ -321,4 +367,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 8,
   },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 4,
+    marginRight: 6,
+  },
+  online: { backgroundColor: "#00A884" },
+  offline: { backgroundColor: "#999" },
 });

@@ -163,7 +163,7 @@ export const getCourseAPI = () => {
 
 export const JoinRoomAPI = (classId: string, className: string) => {
     const url = '/chat/room/join';
-    return instanceChat.post<IChatRoomAPI>(url, {
+    return instanceChat.post<IJoinRoomAPI>(url, {
         classId: classId,
         className: className,
     });

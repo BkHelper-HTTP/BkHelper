@@ -5,12 +5,12 @@
     "owner": "thien.caolehoan",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/images/icon3.png",
+    "icon": "./src/assets/images/icon.png",
     "scheme": "bkhelper",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./src/assets/images/customize-splash.png",
+      "image": "./src/assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0794DE"
     },
@@ -33,6 +33,7 @@
       "package": "com.anonymous.BkHelper",
       "runtimeVersion": "1.0.0"
     },
+    "platforms": ["android", "ios"],
     "web": {
       "bundler": "metro",
       "output": "static",

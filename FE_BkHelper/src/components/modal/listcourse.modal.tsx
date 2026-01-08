@@ -97,7 +97,7 @@ const ListCourseModal = (props: IProps) => {
                                 router.push({
                                     pathname: "/chat/chat.screen",
                                     params: {
-                                        classId: selectedCourse?.course_id!,
+                                        classId: selectedCourse?.course_id_lms!,
                                         className: selectedCourse?.course_name!,
                                     },
                                 });

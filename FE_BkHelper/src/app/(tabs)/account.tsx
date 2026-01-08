@@ -9,11 +9,13 @@ import { APP_COLOR } from '@/utils/constant';
 import { getUserInfAPI, logOutAPI } from '@/utils/api';
 import { useCurrentApp } from '@/context/app.context';
 import Toast from 'react-native-root-toast';
+import SkeletonAccountTab from "@/components/loading/skeleton.accountTab";
 
 const AccountTab = () => {
     const navigation = useNavigation<any>();
     const { appState } = useCurrentApp()
     const [user, setUser] = useState<IUserInformation | null>(null);
+    const [loading, setLoading] = useState(true);
 
     const handleLogOut = async () => {
         if (appState && appState?.lms.sesskey, appState?.lms.cookies.JSESSIONID, appState?.lms.cookies.CASTGC, appState?.lms.cookies.SESSION, appState?.lms.cookies.MoodleSession, appState?.lms.cookies.MOODLEID1_) {
@@ -41,23 +43,33 @@ const AccountTab = () => {
 
     useEffect(() => {
         const fetchUser = async () => {
-            if (appState?.mybk?.token) {
-                const res = await getUserInfAPI(appState.mybk.token);
-                if (res && res.user_detail) {
-                    setUser(res);
-                } else {
-                    Toast.show("Get user information failed", {
-                        duration: Toast.durations.LONG,
-                        textColor: "white",
-                        backgroundColor: "red",
-                        opacity: 1,
-                        position: Toast.positions.BOTTOM
-                    });
+            setLoading(true);
+            try {
+                if (appState?.mybk?.token) {
+                    const res = await getUserInfAPI(appState.mybk.token);
+                    if (res && res.user_detail) {
+                        setUser(res);
+                    } else {
+                        Toast.show("Get user information failed", {
+                            duration: Toast.durations.LONG,
+                            textColor: "white",
+                            backgroundColor: "red",
+                            opacity: 1,
+                            position: Toast.positions.BOTTOM,
+                        });
+                    }
                 }
+            } finally {
+                setLoading(false);
             }
         };
+
         fetchUser();
     }, []);
+
+    if (loading) {
+        return <SkeletonAccountTab />;
+    }
 
     const fullName = `${user?.user_detail.data.lastName} ${user?.user_detail.data.firstName}`;
 

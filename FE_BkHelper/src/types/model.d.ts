@@ -497,12 +497,13 @@ declare global {
         avatarUrl: string
     }
 
-    interface IChatRoomAPI {
-        id: string,
-        classId: string,
-        className: string,
-        createdAt: string,
-        chatUsers: IUserChatAPI[],
+    interface IJoinRoomAPI {
+        roomId: string,
+        user: {
+            id: string,
+            name: string,
+            avatarUrl: string
+        }
     }
 
     interface IChatMessageAPI {
