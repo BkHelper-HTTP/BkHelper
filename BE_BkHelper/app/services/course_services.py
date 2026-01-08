@@ -81,9 +81,6 @@ def create_courses_from_schedule(db: Session, user_id: str, schedule: list):
         db.add(course)
         created_courses.append(course)
         db.commit()
-    
-    if created_courses:
-        db.commit()
 
     return created_courses
 
