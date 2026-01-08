@@ -76,7 +76,9 @@ def unified_login(data: LoginSchema, db=Depends(get_db)):
         access_token = create_access_token({
             "user_id": user.user_id,
             "student_code": user.student_code,
-            "avatar_url": user.avatar_url
+            "avatar_url": user.avatar_url,
+            "first_name": user.first_name,
+            "last_name": user.last_name
         })
 
         return {
