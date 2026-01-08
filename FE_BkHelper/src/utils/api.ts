@@ -1,4 +1,4 @@
-import instance from "@/utils/axios.customize";
+import { instanceChat, instance } from "@/utils/axios.customize";
 
 export const lmsLoginAPI = (username: string, password: string) => {
     const url = `/api/v1/auth/hcmut-login`;
@@ -154,4 +154,22 @@ export const UpdateCommentAPI = (comment_id: string, content: string) => {
 export const DeleteCommentAPI = (comment_id: string) => {
     const url = `/api/v1/comment/delete_comment/${comment_id}`;
     return instance.delete<IDeleteCommentAPI>(url);
+};
+
+export const getCourseAPI = () => {
+    const url = `/api/v1/course/my-courses`;
+    return instance.get<ICourseAPI>(url);
+};
+
+export const JoinRoomAPI = (classId: string, className: string) => {
+    const url = '/chat/room/join';
+    return instanceChat.post<IChatRoomAPI>(url, {
+        classId: classId,
+        className: className,
+    });
+};
+
+export const getChatMessagesAPI = (classId: string) => {
+    const url = `/chat/room/${classId}/messages`;
+    return instanceChat.get<IChatMessageAPI[]>(url);
 };

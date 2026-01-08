@@ -7,8 +7,8 @@ import Toast from "react-native-root-toast";
 interface IProps {
     visible: boolean;
     setVisible: (visible: boolean) => void;
-    selectedCourse: ICourse | null;
-    setSelectedCourse: (selectedCourse: ICourse | null) => void;
+    selectedCourse: ICourseItemAPI | null;
+    setSelectedCourse: (selectedCourse: ICourseItemAPI | null) => void;
 }
 
 const ListCourseModal = (props: IProps) => {
@@ -16,88 +16,77 @@ const ListCourseModal = (props: IProps) => {
 
     const handleForumCreate = async () => {
         setVisible(false);
-        const res = await fetchForumAPI("Phát triDi động", "5378458", "CO300", "Nguyen", "An", "an.nguyen@hcmut.edu.vn", "20251")
-        if (res && res.status === "success") {
-            router.push({
-                pathname: "/forum/forum.view.screen",
-                params: {
-                    forum_id: res.forum.forum_id,
-                    forum_name: res.forum.forum_name,
-                    course_code: res.forum.course_code
-                }
-            });
-        } else {
-            Toast.show("Forum create failed", {
-                duration: Toast.durations.LONG,
-                textColor: "white",
-                backgroundColor: "red",
-                opacity: 1,
-                position: Toast.positions.BOTTOM
-            });
-        }
+        if (selectedCourse && selectedCourse.course_name && selectedCourse.course_id_lms && selectedCourse.course_code &&
+            selectedCourse.teacher_last_name && selectedCourse.teacher_first_name && selectedCourse.teacher_email && selectedCourse.semester) {
+            const res = await fetchForumAPI(
+                selectedCourse.course_name,
+                selectedCourse.course_id_lms,
+                selectedCourse.course_code,
+                selectedCourse.teacher_last_name,
+                selectedCourse.teacher_first_name,
+                selectedCourse.teacher_email,
+                selectedCourse.semester
+            );
 
+
+            if (res && res.status === "success") {
+                router.push({
+                    pathname: "/forum/forum.view.screen",
+                    params: {
+                        forum_id: res.forum.forum_id,
+                        forum_name: res.forum.forum_name,
+                        course_code: res.forum.course_code,
+                    },
+                });
+            } else {
+                Toast.show("Forum create failed", {
+                    duration: Toast.durations.LONG,
+                    textColor: "white",
+                    backgroundColor: "red",
+                    opacity: 1,
+                    position: Toast.positions.BOTTOM,
+                });
+            }
+        }
     }
 
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-        >
+        <Modal visible={visible} transparent animationType="fade">
             <View style={styles.overlay}>
                 <View style={styles.modalBox}>
 
                     {/* Close */}
                     <TouchableOpacity
                         style={styles.closeBtn}
-                        onPress={() => setVisible(false)}
+                        onPress={() => {
+                            setVisible(false);
+                            setSelectedCourse(null);
+                        }}
                     >
-                        <Text style={{ fontSize: 18, textAlign: "center" }}>✕</Text>
+                        <Text style={{ fontSize: 18 }}>✕</Text>
                     </TouchableOpacity>
 
                     {/* Title */}
                     <Text style={styles.modalTitle}>
-                        Khai phá dữ liệu - CO3029
+                        {selectedCourse?.course_name}
                     </Text>
+
                     <Text style={styles.teacherText}>
-                        Đỗ Thanh Thái
+                        {selectedCourse?.teacher_last_name} {selectedCourse?.teacher_first_name}
                     </Text>
 
                     {/* Info */}
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Lớp:</Text>
-                        <Text style={styles.value}>L02</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Giờ học:</Text>
-                        <Text style={styles.value}>7:00 - 8:50</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Phòng học:</Text>
-                        <Text style={styles.value}>H6-110</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Địa điểm:</Text>
-                        <Text style={styles.value}>ĐHBK Cơ Sở 2 - Đông Hoà</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Số tín chỉ:</Text>
-                        <Text style={styles.value}>3</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Mã học kỳ:</Text>
-                        <Text style={styles.value}>20251</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Học kỳ:</Text>
-                        <Text style={styles.value}>Học kỳ 1 Năm học 2025 - 2026</Text>
-                    </View>
+                    <Info label="Mã môn" value={selectedCourse?.course_code!} />
+                    <Info label="Lớp" value={selectedCourse?.class_group ?? "N/A"} />
+                    <Info
+                        label="Giờ học"
+                        value={`${selectedCourse?.start_time} - ${selectedCourse?.end_time}`}
+                    />
+                    <Info label="Phòng học" value={selectedCourse?.room_code!} />
+                    <Info label="Địa điểm" value={selectedCourse?.campus!} />
+                    <Info label="Số tín chỉ" value={String(selectedCourse?.num_of_credit)} />
+                    <Info label="Mã học kỳ" value={selectedCourse?.semester!} />
+                    <Info label="Học kỳ" value={selectedCourse?.semester_name!} />
 
                     {/* Actions */}
                     <View style={styles.actionRow}>
@@ -105,7 +94,13 @@ const ListCourseModal = (props: IProps) => {
                             style={[styles.actionBtn, { backgroundColor: APP_COLOR.DARK_BLUE }]}
                             onPress={() => {
                                 setVisible(false);
-                                router.push("/chat/chat.screen");
+                                router.push({
+                                    pathname: "/chat/chat.screen",
+                                    params: {
+                                        classId: selectedCourse?.course_id!,
+                                        className: selectedCourse?.course_name!,
+                                    },
+                                });
                             }}
                         >
                             <Text style={styles.actionText}>Chat</Text>
@@ -120,6 +115,7 @@ const ListCourseModal = (props: IProps) => {
                             </Text>
                         </TouchableOpacity>
                     </View>
+
                 </View>
             </View>
         </Modal>
@@ -127,12 +123,19 @@ const ListCourseModal = (props: IProps) => {
     )
 }
 
+const Info = ({ label, value }: { label: string; value: string }) => (
+    <View style={styles.infoRow}>
+        <Text style={styles.label}>{label}:</Text>
+        <Text style={styles.value}>{value}</Text>
+    </View>
+);
+
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.4)",
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
     },
     modalBox: {
         width: "90%",
@@ -147,53 +150,51 @@ const styles = StyleSheet.create({
         backgroundColor: "red",
         width: 30,
         borderTopRightRadius: 10,
-        borderBottomLeftRadius: 10
+        borderBottomLeftRadius: 10,
+        alignItems: "center",
     },
     modalTitle: {
-        fontSize: 25,
+        fontSize: 22,
         fontWeight: "700",
         color: "#007ACC",
         textAlign: "center",
-        marginBottom: 4
     },
     teacherText: {
         textAlign: "center",
-        fontSize: 25,
+        fontSize: 18,
         fontWeight: "600",
         marginBottom: 12,
     },
     infoRow: {
         flexDirection: "row",
         marginBottom: 6,
-        marginLeft: 26,
-        gap: 15
+        gap: 12,
     },
     label: {
         width: 100,
         fontWeight: "600",
-        color: "#333"
+        color: "#333",
     },
     value: {
         flex: 1,
-        color: "#333"
+        color: "#333",
     },
     actionRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 16
+        marginTop: 16,
     },
     actionBtn: {
         flex: 1,
         paddingVertical: 10,
         borderRadius: 10,
         alignItems: "center",
-        marginHorizontal: 6
+        marginHorizontal: 6,
     },
     actionText: {
         fontWeight: "700",
         fontSize: 16,
-        color: "#fff"
-    }
+        color: "#fff",
+    },
 });
 
 

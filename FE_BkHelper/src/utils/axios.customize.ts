@@ -8,8 +8,17 @@ const backend =
         ? process.env.EXPO_PUBLIC_ANDROID_API_URL
         : process.env.EXPO_PUBLIC_IOS_API_URL;
 
+// Chat backend URL: prefer a dedicated env var, then fall back to the API backend.
+// On Android emulator, `localhost` refers to the emulator itself, so use 10.0.2.2 as fallback.
+const chatBackend = process.env.EXPO_PUBLIC_CHAT_URL ?? backend ?? (Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000");
+
 const instance = axios.create({
     baseURL: backend,
+    timeout: 60000,
+})
+
+const instanceChat = axios.create({
+    baseURL: chatBackend,
     timeout: 60000,
 })
 
@@ -36,4 +45,26 @@ instance.interceptors.response.use(function (response) {
     return Promise.reject(error);
 });
 
-export default instance;
+instanceChat.interceptors.request.use(async function (config) {
+    // Do something before request is sent
+    const access_token = await AsyncStorage.getItem("access_token");
+    // console.log('>>> access_token:', access_token);
+    config.headers["Authorization"] = `Bearer ${access_token}`;
+    return config;
+}, function (error) {
+    // Do something with request error
+    return Promise.reject(error);
+});
+
+// Add a response interceptor
+instanceChat.interceptors.response.use(function (response) {
+    // Any status code that lie within the range of 2xx cause this function to trigger
+    // Do something with response data
+    return response.data;
+}, function (error) {
+    // Any status codes that falls outside the range of 2xx cause this function to trigger
+    // Do something with response error
+    return Promise.reject(error);
+});
+
+export { instance, instanceChat };
