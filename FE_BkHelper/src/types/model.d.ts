@@ -466,4 +466,54 @@ declare global {
         status: string
     }
 
+    interface ICourseItemAPI {
+        course_code: string,
+        user_id: string,
+        course_id_lms: string,
+        teacher_last_name: string,
+        class_group: string,
+        end_time: string,
+        campus: string,
+        num_of_credit: number,
+        semester_name: string,
+        course_name: string,
+        course_id: string,
+        teacher_first_name: string,
+        teacher_email: string,
+        start_time: string,
+        room_code: string,
+        semester: string,
+        created_at: string
+    }
+
+    interface ICourseAPI {
+        status: string,
+        data: ICourseITemAPI[]
+    }
+
+    interface IUserChatAPI {
+        id: string,
+        name: string,
+        avatarUrl: string
+    }
+
+    interface IChatRoomAPI {
+        id: string,
+        classId: string,
+        className: string,
+        createdAt: string,
+        chatUsers: IUserChatAPI[],
+    }
+
+    interface IChatMessageAPI {
+        id: string,
+        msgType: string,
+        content: string,
+        sender: {
+            id: string,
+            name: string,
+            avatarUrl: string
+        },
+        createdAt: string
+    }
 }

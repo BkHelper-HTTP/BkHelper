@@ -43,7 +43,6 @@ const AccountTab = () => {
         const fetchUser = async () => {
             if (appState?.mybk?.token) {
                 const res = await getUserInfAPI(appState.mybk.token);
-                console.log("check res:", res)
                 if (res && res.user_detail) {
                     setUser(res);
                 } else {
@@ -69,7 +68,7 @@ const AccountTab = () => {
                 <Image
                     source={{ uri: user?.avatar_url }}
                     style={styles.avatar}
-                    resizeMode="cover"         // hoặc "contain" tuỳ hiệu ứng mong muốn
+                    resizeMode="cover"
                     resizeMethod="resize"
                 />
                 <TouchableOpacity style={styles.editIcon}>
